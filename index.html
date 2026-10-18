@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101b30">
+  <meta name="description" content="Ethan's pocket-sized morning adventure. Three quests, three Battle Points, one great start.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Morning Quest · BattlePoints</title>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">⚔</span><div><strong>BATTLE<span>POINTS</span></strong><small>ETHAN'S MORNING QUEST</small></div></div>
+    <div class="clock-panel"><span class="clock-label">LOCAL TIME</span><time id="liveClock" aria-label="Current time">--:--</time></div>
+  </header>
+
+  <main id="questView">
+    <section class="hero-card" aria-label="Ethan's character and Battle Points">
+      <div class="hero-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div>
+      <div class="avatar-scene" id="avatarScene">
+        <svg class="avatar" viewBox="0 0 240 230" role="img" aria-label="Pixel-art hero whose equipment improves as quests finish" shape-rendering="crispEdges">
+          <ellipse cx="120" cy="210" rx="62" ry="10" fill="#08101b" opacity=".55"/>
+          <g class="scene-sparks" fill="#fac964"><path d="M29 46h6v-6h5v6h6v5h-6v6h-5v-6h-6z"/><path d="M193 64h6v-6h5v6h6v5h-6v6h-5v-6h-6z"/></g>
+          <g class="avatar-body">
+            <!-- back cape -->
+            <path d="M82 117h79v68h-15v13H91v-13H76v-37h6z" fill="#27477a"/>
+            <!-- shoes -->
+            <path d="M91 181h24v18H79v-9h12zm39 0h24v9h11v9h-35z" fill="#1a2335"/>
+            <path d="M82 193h33v6H79v-6zm48 0h35v6h-35z" fill="#627389"/>
+            <!-- trousers -->
+            <path d="M91 156h63v27h-24v-13h-14v13H91z" fill="#3d527c"/><path d="M91 156h63v8H91z" fill="#526993"/>
+            <!-- left arm -->
+            <path d="M67 118h24v49H65v-12h-7v-24h9z" fill="#244e9b"/><path d="M65 151h26v16H65z" fill="#d4a273"/>
+            <!-- right arm -->
+            <path d="M152 118h25v30h6v19h-31z" fill="#244e9b"/><path d="M152 150h31v17h-31z" fill="#d4a273"/>
+            <!-- body -->
+            <path d="M88 113h69v51H88z" fill="#327bd4"/><path d="M95 119h55v39H95z" fill="#3b8de6"/><path d="M112 119h20v26h-20z" fill="#e3edf2"/><path d="M116 119h12v19h-12z" fill="#fac664"/><path d="M88 151h69v8H88z" fill="#223e6b"/>
+            <!-- face -->
+            <path d="M81 54h82v62H81z" fill="#c99464"/><path d="M88 61h68v47H88z" fill="#efba86"/><path d="M88 99h68v9H88z" fill="#e3a676"/>
+            <!-- hair -->
+            <path d="M81 52h9V40h62v10h11v20h-8v-9h-17v8h-15v-8h-14v8H96v6H81z" fill="#352b2d"/><path d="M96 40h55v8H96z" fill="#55413b"/>
+            <!-- ears -->
+            <path d="M76 82h12v16H76zm80 0h12v16h-12z" fill="#dba475"/>
+            <!-- eyes -->
+            <path d="M100 81h10v14h-10zm32 0h10v14h-10z" fill="#202c3d"/><path d="M101 81h4v5h-4zm32 0h4v5h-4z" fill="#ffffff"/>
+            <path d="M115 101h14v5h-14z" fill="#965a4e"/>
+            <!-- extra gear -->
+            <g class="gear gear-sword">
+              <path d="M181 66h10v78h-10z" fill="#b7e3ee"/><path d="M184 54h5v12h-5z" fill="#fff3cd"/><path d="M172 138h28v8h-28z" fill="#e6b357"/><path d="M183 146h8v24h-8z" fill="#704a39"/><path d="M179 168h16v8h-16z" fill="#e5ba66"/>
+            </g>
+            <g class="gear gear-shield">
+              <path d="M38 117h41v44l-20 19-21-19z" fill="#dcae55"/><path d="M44 123h29v34l-14 14-15-14z" fill="#3b78b2"/><path d="M54 131h10v22H54z" fill="#e8d7a5"/><path d="M49 138h20v8H49z" fill="#e8d7a5"/>
+            </g>
+            <g class="gear gear-crown">
+              <path d="M88 42h67v-13h-11V17l-17 14-7-17-8 17-17-14v12H88z" fill="#f0bf4e"/><path d="M88 40h67v8H88z" fill="#fff0a5"/><path d="M118 33h9v8h-9z" fill="#a24c86"/>
+            </g>
+          </g>
+        </svg>
+        <span id="floatingPoints" class="floating-points" aria-live="polite"></span>
+      </div>
+      <div class="hero-info">
+        <div class="eyebrow"><span class="status-dot"></span> YOUR ADVENTURE</div>
+        <h1>Morning<br><em>Warrior</em></h1>
+        <p class="level-label" id="heroLevel">LEVEL 1 EXPLORER</p>
+        <div class="points-line"><div><span class="big-number" id="dailyPoints">0</span><span class="points-denom"> / 3 BP</span></div><span class="points-tag">TODAY</span></div>
+        <div class="meter" id="dailyMeter" role="progressbar" aria-label="Regular Battle Points" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><span id="meterFill"></span></div>
+        <p id="taskSummary" class="hero-caption">0 / 16 steps done</p>
+      </div>
+    </section>
+
+    <section class="timer-card" aria-labelledby="timerHeading">
+      <div class="section-top"><h2 id="timerHeading"><span aria-hidden="true">◷</span> Quest timer</h2><span class="subtle-label">JUST A VISUAL AID</span></div>
+      <div class="timer-main"><div class="timer-controls"><label for="timerMinutes">MINUTES</label><div class="stepper"><button id="minuteMinus" type="button" aria-label="Subtract one minute">−</button><input type="number" id="timerMinutes" inputmode="numeric" min="1" max="120" value="5" aria-label="Timer minutes"><button id="minutePlus" type="button" aria-label="Add one minute">+</button></div></div><div class="timer-face"><strong id="timerDisplay" aria-live="off">05:00</strong><small id="timerStatus">READY WHEN YOU ARE</small></div></div>
+      <div class="timer-actions"><button class="action-primary" id="timerToggle" type="button">▶ START</button><button class="action-secondary" id="timerReset" type="button">↺ RESET</button></div>
+    </section>
+
+    <div class="section-heading"><div><span class="eyebrow">THE DAILY MISSION</span><h2>Three quests. <span>Three points.</span></h2></div><span id="completeCount" class="quest-counter">0 / 3</span></div>
+    <section id="questList" class="quest-list" aria-label="Daily quests"></section>
+
+    <section class="bonus-card" aria-labelledby="bonusHeading">
+      <div class="bonus-title"><span class="bonus-icon" aria-hidden="true">★</span><div><h2 id="bonusHeading">Bonus rewards</h2><p>Parent-approved. Extra special.</p></div><span id="bonusBadge" class="bonus-badge">0 READY</span></div>
+      <div id="bonusList"></div>
+      <p class="bonus-footnote">Piano lives here now, not in the three daily quests. An adult chooses when to offer bonus points.</p>
+    </section>
+
+    <details class="reminder-card"><summary><span>♡ Health reminder</span><span class="reminder-hint">Not worth BP</span></summary><p>Check with an adult about any vitamins or medication needed today. Never take medicine just to complete a quest.</p></details>
+  </main>
+
+  <main id="statsView" hidden>
+    <div class="page-title"><span class="eyebrow">ADVENTURE LOG</span><h1>Quest history</h1><p>Every small win counts.</p></div>
+    <section class="stats-grid" id="statsHighlights"></section>
+    <section class="stats-panel"><div class="section-top"><h2>Last 7 mornings</h2><span class="subtle-label">REGULAR BP</span></div><div class="chart" id="weekChart" aria-label="Battle Points over the past seven days"></div></section>
+    <section class="stats-panel"><div class="section-top"><h2>Daily records</h2><span class="subtle-label">LATEST FIRST</span></div><div id="historyList" class="history-list"></div></section>
+    <p class="privacy-note">Records are saved in this browser on this device, not on GitHub. Back up the data from the adult panel to keep a copy.</p>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button id="navQuests" class="nav-item active" type="button" aria-current="page"><span aria-hidden="true">⚔</span><small>QUESTS</small></button>
+    <button id="navStats" class="nav-item" type="button"><span aria-hidden="true">▥</span><small>HISTORY</small></button>
+    <button id="navParent" class="nav-item" type="button"><span aria-hidden="true">♙</span><small>ADULT</small></button>
+  </nav>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+
+<dialog id="parentDialog" class="parent-dialog" aria-labelledby="parentDialogTitle">
+  <form method="dialog" class="dialog-head"><h2 id="parentDialogTitle">Adult control room</h2><button class="close-btn" aria-label="Close parent controls" value="cancel">✕</button></form>
+  <div id="parentBody"></div>
+</dialog>
+<script src="./app.js" defer></script>
+</body>
+</html>
