@@ -46,6 +46,6 @@ Then open `http://localhost:8080`. The workflow checks JavaScript syntax and the
 
 **Ready for School (1 BP):** lunchbox in bag, water bottle, zip bag, check bag checklist.
 
-There is a health reminder separate from scoring. Vitamins or medications are **not** incentivised by game points; an adult decides whether they are needed.
+There are optional tickable health reminders, with timestamps saved separately from scored tasks. Vitamins or medications are **not** incentivised by game points; an adult decides whether they are needed.
 
 © Personal family project.

@@ -107,7 +107,9 @@
     const renderBonus=(b)=>'<div class="bonus-item"><div><strong>'+esc(b.type==='piano'?'🎹 Piano bonus':'🌟 Special bonus')+' · +'+Number(b.amount)+' BP</strong><p>'+esc(b.reason)+'</p></div>'+(b.claimedAt?'<span class="claimed-mark">✓ CLAIMED</span>':'<button class="claim-button" type="button" data-claim="'+esc(b.id)+'">CLAIM +'+Number(b.amount)+'</button>')+'</div>';
     $('bonusList').innerHTML=pending.map(renderBonus).join('')+claimed.map(renderBonus).join('');
   }
-  function render() {renderQuests();renderBonuses();if(activeTab==='stats') renderStats();}
+  function renderHealth() {const health=currentDay().health||{};$('healthVitamin').checked=!!(health.vitamins&&health.vitamins.done);$('healthMedication').checked=!!(health.medication&&health.medication.done);}
+  function render() {renderQuests();renderBonuses();renderHealth();if(activeTab==='stats') renderStats();}
+  $('healthReminders').addEventListener('change',(e)=>{const id=e.target.dataset.health;if(id!=='vitamins'&&id!=='medication')return;const day=currentDay();if(!day.health)day.health={};day.health[id]={done:e.target.checked,at:new Date().toISOString()};save();});
   $('questList').addEventListener('click',(e)=>{
     const button=e.target.closest('[data-quest]');
     if (button) {expandedQuest=expandedQuest===button.dataset.quest?null:button.dataset.quest;renderQuests();}
