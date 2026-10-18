@@ -22,6 +22,7 @@ jobs:
       - name: Validate JavaScript and manifest
         run: |
           node --check app.js
+          node --check journey.js
           node --check service-worker.js
           node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8'))"
       - name: Configure Pages

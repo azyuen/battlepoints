@@ -34,6 +34,8 @@
   let expandedQuest = 'morning';
   let activeTab = 'quests';
   let adultUnlocked = false;
+  let pendingParentAction = 'dashboard';
+  let journey = null;
   let toastTimer = null;
   let timerMinutes = 5, remainingSeconds = 300, timerRunning = false, timerDeadline = 0;
   function dayFor(key) {
@@ -55,11 +57,11 @@
   function taskDone(day,id) {return Boolean(day.tasks[id] && day.tasks[id].done);}
   function completedSteps(day) {return quests.reduce((n,q)=>n+q.tasks.filter(t=>taskDone(day,t[0])).length,0);}
   function questDone(day,q) {return q.tasks.every(t=>taskDone(day,t[0]));}
-  function regularBP(day) {return quests.filter(q=>questDone(day,q)).length;}
+  function regularBP(day) {return quests.filter(q=>questDone(day,q)&&!(day.risks&&day.risks[q.id]&&day.risks[q.id].forfeited)).length;}
   function claimedBP(day) {return day.bonuses.reduce((n,b)=>n+(b.claimedAt ? Number(b.amount)||0 : 0),0);}
   function allBP(day) {return regularBP(day)+claimedBP(day);}
   function totalBP() {return Object.values(data.days).reduce((n,d)=>n+allBP(d),0);}
-  function level() {return 1+Math.floor(totalBP()/12);}
+  function level() {return journey ? journey.level() : 1;}
   function esc(str) {return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function friendlyDate(key) {const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});}
   function showToast(message) {
@@ -84,40 +86,50 @@
   }
   function renderQuests() {
     const day=currentDay();
-    $('questList').innerHTML=quests.map((q)=>{
+    $('questList').innerHTML=quests.map(q=>{
       const complete=questDone(day,q);
       const count=q.tasks.filter(t=>taskDone(day,t[0])).length;
       const open=expandedQuest===q.id;
+      const risk=(day.risks&&day.risks[q.id])||{};
       const rows=q.tasks.map(([id,label])=>'<label class="task-row"><input type="checkbox" data-task="'+id+'" '+(taskDone(day,id)?'checked':'')+'><span class="tickbox" aria-hidden="true">✓</span><span class="task-label">'+esc(label)+'</span></label>').join('');
-      return '<article class="quest-card '+(complete?'finished':'')+'"><button class="quest-toggle" type="button" data-quest="'+q.id+'" aria-expanded="'+open+'" aria-controls="panel-'+q.id+'"><span class="quest-emoji" aria-hidden="true">'+q.icon+'</span><span><span class="quest-title">'+q.title+'</span><span class="quest-sub">'+count+' / '+q.tasks.length+' steps done</span></span><span class="quest-side"><span class="bp-label">'+(complete?'✓ 1 BP':'+1 BP')+'</span><span class="quest-arrow" aria-hidden="true">'+(open?'⌃':'⌄')+'</span></span></button>'+(open?'<div class="quest-body" id="panel-'+q.id+'">'+rows+(complete?'<p class="quest-win">★ QUEST COMPLETE · +1 BP ★</p>':'')+'</div>':'')+'</article>';
+      const riskTools='<div class="risk-row '+(risk.forfeited?'risk-forfeited':risk.armed?'risk-armed':'')+'"><div><strong>⚠ Risk BP</strong><small>'+(risk.forfeited?'BP forfeited for this quest.':risk.armed?'This point is at risk. An adult can forfeit it below.':'Adult can put this point at risk; no PIN required.')+'</small></div><button type="button" data-risk="'+(risk.armed?'clear':'arm')+'" data-id="'+q.id+'">'+(risk.armed?'CLEAR RISK':'⚠ RISK BP')+'</button></div>'+(risk.armed&&!risk.forfeited?'<button class="risk-forfeit-btn" type="button" data-risk="forfeit" data-id="'+q.id+'">Forfeit this quest’s 1 BP</button>':'');
+      return '<article class="quest-card '+(complete?'finished':'')+'"><button class="quest-toggle" type="button" data-quest="'+q.id+'" aria-expanded="'+open+'" aria-controls="panel-'+q.id+'"><span class="quest-emoji" aria-hidden="true">'+q.icon+'</span><span><span class="quest-title">'+q.title+'</span><span class="quest-sub">'+count+' / '+q.tasks.length+' steps done'+(risk.armed?' · ⚠ AT RISK':'')+'</span></span><span class="quest-side"><span class="bp-label">'+(risk.forfeited?'0 BP':complete?'✓ 1 BP':'+1 BP')+'</span><span class="quest-arrow" aria-hidden="true">'+(open?'⌃':'⌄')+'</span></span></button>'+(open?'<div class="quest-body" id="panel-'+q.id+'">'+rows+riskTools+(complete?'<p class="quest-win">'+(risk.forfeited?'⚠ LIST COMPLETE · BP FORFEITED':'★ QUEST COMPLETE · +1 BP ★')+'</p>':'')+'</div>':'')+'</article>';
     }).join('');
     $('completeCount').textContent=regularBP(day)+' / 3';
     $('dailyPoints').textContent=regularBP(day);
     $('dailyMeter').setAttribute('aria-valuenow',String(regularBP(day)));
     $('meterFill').style.width=(regularBP(day)/3*100)+'%';
     $('taskSummary').textContent=completedSteps(day)+' / '+taskCount+' steps done';
-    $('heroLevel').textContent='LEVEL '+level()+' EXPLORER · '+totalBP()+' TOTAL BP';
+    $('heroLevel').textContent='LEVEL '+level()+' EXPLORER · '+(journey?journey.wallet():totalBP())+' BP AVAILABLE';
     $('avatarScene').dataset.gear=String(regularBP(day));
   }
   function renderBonuses() {
-    const day=currentDay();
-    const pending=day.bonuses.filter(b=>!b.claimedAt);
-    const claimed=day.bonuses.filter(b=>b.claimedAt);
+    const day=currentDay(),pending=day.bonuses.filter(b=>!b.claimedAt),claimed=day.bonuses.filter(b=>b.claimedAt);
+    const pianoAlready=day.bonuses.some(b=>b.type==='piano');
     $('bonusBadge').textContent=pending.length+' READY';
-    const renderBonus=(b)=>'<div class="bonus-item"><div><strong>'+esc(b.type==='piano'?'🎹 Piano bonus':'🌟 Special bonus')+' · +'+Number(b.amount)+' BP</strong><p>'+esc(b.reason)+'</p></div>'+(b.claimedAt?'<span class="claimed-mark">✓ CLAIMED</span>':'<button class="claim-button" type="button" data-claim="'+esc(b.id)+'">CLAIM +'+Number(b.amount)+'</button>')+'</div>';
-    $('bonusList').innerHTML=pending.map(renderBonus).join('')+claimed.map(renderBonus).join('');
+    const rows='<div class="bonus-shortcuts"><div class="bonus-shortcut"><span class="bonus-big-icon">🎹</span><div><strong>Piano +1 BP</strong><small>Adult approves practice</small></div><button type="button" data-bonus="piano" '+(pianoAlready?'disabled':'')+'>'+(pianoAlready?'OFFERED':'🔒 APPROVE')+'</button></div><div class="bonus-shortcut"><span class="bonus-big-icon">🌟</span><div><strong>Extra bonus point</strong><small>Adult adds a reason</small></div><button type="button" data-bonus="other">🔒 ADD</button></div></div>';
+    const renderBonus=b=>'<div class="bonus-item"><div><strong>'+esc(b.type==='piano'?'🎹 Piano bonus':'🌟 Special bonus')+' · +'+Number(b.amount)+' BP</strong><p>'+esc(b.reason)+'</p></div>'+(b.claimedAt?'<span class="claimed-mark">✓ CLAIMED</span>':'<button class="claim-button" type="button" data-claim="'+esc(b.id)+'">CLAIM +'+Number(b.amount)+'</button>')+'</div>';
+    $('bonusList').innerHTML=rows+pending.map(renderBonus).join('')+claimed.map(renderBonus).join('');
   }
   function renderHealth() {const health=currentDay().health||{};$('healthVitamin').checked=!!(health.vitamins&&health.vitamins.done);$('healthMedication').checked=!!(health.medication&&health.medication.done);}
-  function render() {renderQuests();renderBonuses();renderHealth();if(activeTab==='stats') renderStats();}
+  function render() {renderQuests();renderBonuses();renderHealth();if(activeTab==='journey'&&journey)journey.render();if(adultUnlocked&&$('statsHighlights'))renderStats();}
   $('healthReminders').addEventListener('change',(e)=>{const id=e.target.dataset.health;if(id!=='vitamins'&&id!=='medication')return;const day=currentDay();if(!day.health)day.health={};day.health[id]={done:e.target.checked,at:new Date().toISOString()};save();});
   $('questList').addEventListener('click',(e)=>{
     const button=e.target.closest('[data-quest]');
-    if (button) {expandedQuest=expandedQuest===button.dataset.quest?null:button.dataset.quest;renderQuests();}
+    if (button) {expandedQuest=expandedQuest===button.dataset.quest?null:button.dataset.quest;renderQuests();return;}
+    const risk=e.target.closest('[data-risk]');if(!risk)return;
+    const qid=risk.dataset.id,action=risk.dataset.risk,day=currentDay();if(!quests.some(q=>q.id===qid))return;
+    if(!day.risks)day.risks={};const old=day.risks[qid]||{};
+    if(action==='arm'){if(!confirm('Put this Battle Point at risk? The adult can later forfeit it even after completing the list.'))return;day.risks[qid]={armed:true,forfeited:false,at:new Date().toISOString()};}
+    else if(action==='clear'){if(!confirm('Clear the risk and restore the chance to earn this BP?'))return;day.risks[qid]={armed:false,forfeited:false,at:new Date().toISOString()};}
+    else if(action==='forfeit'){if(!old.armed||!confirm('Forfeit this quest’s 1 BP? This may also remove the day’s encounter eligibility.'))return;day.risks[qid]={...old,forfeited:true,forfeitedAt:new Date().toISOString()};}
+    save();render();showToast(action==='forfeit'?'1 BP forfeited':action==='arm'?'BP at risk':'Risk cleared');
   });
   $('questList').addEventListener('change',(e)=>{
     if(e.target.matches('[data-task]')) markTask(e.target.dataset.task,e.target.checked);
   });
   $('bonusList').addEventListener('click',(e)=>{
+    const quick=e.target.closest('[data-bonus]');if(quick&&!quick.disabled){openParentGate(quick.dataset.bonus);return;}
     const btn=e.target.closest('[data-claim]');if(!btn)return;
     const item=currentDay().bonuses.find(b=>b.id===btn.dataset.claim&&!b.claimedAt);
     if(!item)return;
@@ -125,7 +137,7 @@
   });
   function clockTick() {
     const now=new Date();
-    $('liveClock').textContent=now.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',hour12:true});
+    // The sticky countdown replaces the time-of-day clock.
     const key=todayKey(now);if(key!==currentDate)ensureDate();
   }
   function clampMinutes(value) {const n=Number(value);return Number.isFinite(n)?Math.max(1,Math.min(120,Math.round(n))):5;}
@@ -133,8 +145,9 @@
   function renderTimer() {
     const value=Math.max(0,Math.ceil(remainingSeconds));
     $('timerDisplay').textContent=String(Math.floor(value/60)).padStart(2,'0')+':'+String(value%60).padStart(2,'0');
-    $('timerStatus').textContent=value===0?"TIME'S UP · WELL DONE":timerRunning?'TIMER IS RUNNING':'READY WHEN YOU ARE';
-    $('timerToggle').textContent=timerRunning?'❚❚ PAUSE':'▶ '+(value===0?'RESTART':'START');
+    $('timerStatus').textContent=value===0?"DONE!":timerRunning?'RUNNING':'MINUTES';
+    $('timerToggle').textContent=timerRunning?'❚❚':'▶';
+    $('timerToggle').setAttribute('aria-label',timerRunning?'Pause countdown':'Start countdown');
     $('timerMinutes').disabled=timerRunning;
     $('minutePlus').disabled=timerRunning;
     $('minuteMinus').disabled=timerRunning;
@@ -156,18 +169,20 @@
   });
   $('timerReset').addEventListener('click',()=>{timerRunning=false;remainingSeconds=readMinutes()*60;renderTimer();});
   function switchTab(which) {
+    const previous=activeTab;
     activeTab=which;
     $('questView').hidden=which!=='quests';
-    $('statsView').hidden=which!=='stats';
+    $('journeyView').hidden=which!=='journey';
     $('navQuests').classList.toggle('active',which==='quests');
-    $('navStats').classList.toggle('active',which==='stats');
+    $('navJourney').classList.toggle('active',which==='journey');
     $('navQuests').setAttribute('aria-current',which==='quests'?'page':'false');
-    $('navStats').setAttribute('aria-current',which==='stats'?'page':'false');
-    if(which==='stats')renderStats();
+    $('navJourney').setAttribute('aria-current',which==='journey'?'page':'false');
+    if(previous==='journey'&&which!=='journey')adultUnlocked=false;
+    if(which==='journey'&&journey)journey.render();
     window.scrollTo({top:0,behavior:'instant'});
   }
   $('navQuests').addEventListener('click',()=>switchTab('quests'));
-  $('navStats').addEventListener('click',()=>switchTab('stats'));
+  $('navJourney').addEventListener('click',()=>openParentGate('journey'));
   function lastDays(n) {
     const out=[];const date=new Date();date.setHours(12,0,0,0);
     for(let i=n-1;i>=0;i--){const d=new Date(date);d.setDate(date.getDate()-i);out.push(todayKey(d));}
@@ -179,7 +194,7 @@
     const finished=Object.values(data.days).filter(d=>regularBP(d)===3).length;
     const bp=totalBP();
     const week=keys.reduce((n,k)=>n+(data.days[k]?allBP(data.days[k]):0),0);
-    $('statsHighlights').innerHTML=[[''+bp,'TOTAL BP'],[''+finished,'3/3 DAYS'],[''+week,'7-DAY BP']].map(([v,label])=>'<div class="stat-block"><strong>'+v+'</strong><small>'+label+'</small></div>').join('');
+    $('statsHighlights').innerHTML=[[''+bp,'EARNED BP'],[''+finished,'3/3 DAYS'],[''+week,'7-DAY BP']].map(([v,label])=>'<div class="stat-block"><strong>'+v+'</strong><small>'+label+'</small></div>').join('');
     $('weekChart').innerHTML=keys.map(k=>{
       const day=data.days[k];const value=day?regularBP(day):0;
       const label=new Date(Number(k.slice(0,4)),Number(k.slice(5,7))-1,Number(k.slice(8))).toLocaleDateString('en-AU',{weekday:'short'});
@@ -198,12 +213,24 @@
   }
   function validPin(pin) {return /^\d{4,8}$/.test(pin);}
   const dialog=$('parentDialog');
-  $('navParent').addEventListener('click',()=>{
-    adultUnlocked=false;
-    $('parentDialogTitle').textContent='Adult control room';
-    renderParentLock();dialog.showModal();
-  });
+  function openParentGate(action) {
+    pendingParentAction=action;adultUnlocked=false;
+    $('parentDialogTitle').textContent=action==='journey'?'Unlock Battle Journey':action==='piano'?'🎹 Piano bonus':action==='other'?'🌟 Extra bonus':'Adult control room';
+    renderParentLock();
+    if(!dialog.open)dialog.showModal();
+  }
+  $('navParent').addEventListener('click',()=>openParentGate('dashboard'));
   dialog.addEventListener('close',()=>{adultUnlocked=false;});
+  function addBonus(type,reason,amount) {
+    const day=currentDay();
+    if(type==='piano'&&day.bonuses.some(b=>b.type==='piano')){showToast('Piano already offered today');return false;}
+    day.bonuses.push({id:'b'+Date.now()+'-'+Math.floor(Math.random()*1000000),type,reason,amount,createdAt:new Date().toISOString(),claimedAt:null});
+    save();render();dialog.close();showToast('Bonus available for Ethan to claim ★');return true;
+  }
+  function renderQuickBonus() {
+    $('parentBody').innerHTML='<p class="parent-copy">Describe what Ethan did. He can then claim the bonus.</p><form class="form-stack" id="quickBonusForm"><label>Reason<textarea id="quickReason" rows="2" maxlength="180" required placeholder="What did Ethan do well?"></textarea></label><label>Bonus amount<select id="quickAmount"><option value="1">+1 Battle Point</option><option value="2">+2 Battle Points</option></select></label><button class="primary-wide" type="submit">MAKE BONUS AVAILABLE</button></form>';
+    $('quickBonusForm').addEventListener('submit',e=>{e.preventDefault();const text=$('quickReason').value.trim();if(text)addBonus('other',text,Number($('quickAmount').value));});
+  }
   function renderParentLock() {
     const setup=!data.settings.hash;
     $('parentBody').innerHTML='<p class="parent-copy">'+(setup?'First visit: create a 4–8 digit PIN to keep bonus decisions in adult hands.':'Enter your adult PIN to approve bonus rewards and manage backups.')+'</p><form id="parentLockForm" class="form-stack"><label>Adult PIN<input id="adultPin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" autocomplete="off" required></label>'+(setup?'<label>Confirm PIN<input id="adultPinConfirm" type="password" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" autocomplete="off" required></label>':'')+'<div id="pinError" class="form-error" role="alert"></div><button type="submit" class="primary-wide">'+(setup?'CREATE ADULT PIN':'UNLOCK REWARDS')+'</button></form><p class="mini-muted">The PIN is a simple family gate, not strong security. All records stay on this device.</p>';
@@ -223,8 +250,17 @@
           if(await pinHash(data.settings.salt,pin)!==data.settings.hash){$('pinError').textContent='Incorrect PIN. Try again.';return;}
         }catch(e){$('pinError').textContent='PIN verification unavailable in this browser.';return;}
       }
-      adultUnlocked=true;renderParentDashboard();
+      adultUnlocked=true;
+      if(pendingParentAction==='journey'){dialog.close();switchTab('journey');}
+      else if(pendingParentAction==='piano')addBonus('piano','Completed piano practice',1);
+      else if(pendingParentAction==='other')renderQuickBonus();
+      else renderParentDashboard();
     });
+  }
+  function renderRewardRequests() {
+    const target=$('claimedRewardsAdmin');if(!target)return;
+    const records=((data.journey&&data.journey.spending)||[]).filter(x=>x.kind==='reward').slice().reverse();
+    target.innerHTML=records.length?records.map(r=>'<div class="pending-row"><span>'+esc(r.label)+' · '+Number(r.cost)+' BP<br><small>'+esc(r.status==='delivered'?'✓ Delivered':'⏳ Awaiting delivery')+'</small></span>'+(r.status==='delivered'?'':'<button type="button" data-fulfil="'+esc(r.id)+'">MARK DELIVERED</button>')+'</div>').join(''):'<p class="mini-muted">No real-life rewards redeemed yet.</p>';
   }
   function renderParentDashboard() {
     if(!adultUnlocked)return;
@@ -237,7 +273,18 @@
       '<div id="bonusError" class="form-error" role="alert"></div><button type="submit" class="primary-wide">MAKE BONUS AVAILABLE</button></form>'+
       '<div class="parent-section"><h3>Waiting to be claimed</h3><div id="pendingAdmin">'+(pending.length?pending.map(b=>'<div class="pending-row"><span>'+esc(b.reason)+' · +'+Number(b.amount)+' BP</span><button type="button" data-cancel="'+esc(b.id)+'">CANCEL</button></div>').join(''):'<p class="mini-muted">No unclaimed bonuses right now.</p>')+'</div></div>'+
       '<div class="parent-section"><h3>Keep a backup</h3><p class="mini-muted">Your records are only saved in this browser. Export a backup before changing devices, clearing site data, or reinstalling.</p><div class="backup-actions"><button id="exportData" class="secondary-wide" type="button">EXPORT JSON</button><button id="importButton" class="secondary-wide" type="button">IMPORT JSON</button></div><input type="file" id="importFile" accept="application/json,.json" hidden></div>'+
-      '<div class="parent-section"><h3>Adult access</h3><p class="mini-muted">4–8 digit PIN. Resetting the PIN requires the current PIN; data never leaves this browser automatically.</p><button id="changePin" type="button" class="secondary-wide">CHANGE PIN</button><div id="pinChangeArea"></div></div>';
+      '<div class="parent-section"><h3>Adult access</h3><p class="mini-muted">4–8 digit PIN. Resetting the PIN requires the current PIN; data never leaves this browser automatically.</p><button id="changePin" type="button" class="secondary-wide">CHANGE PIN</button><div id="pinChangeArea"></div></div>'+
+      '<div class="parent-section"><h3>Daily history & statistics</h3><p class="mini-muted">Daily statistics now live in the adult control room.</p><div class="stats-grid" id="statsHighlights"></div><div class="stats-panel"><div class="section-top"><h2>Last 7 mornings</h2><span class="subtle-label">REGULAR BP</span></div><div class="chart" id="weekChart"></div></div><div class="stats-panel"><h2>Daily records</h2><div id="historyList" class="history-list"></div></div></div>'+
+      '<div class="parent-section"><h3>Real-world rewards awaiting delivery</h3><div id="claimedRewardsAdmin"></div></div>';
+    renderStats();
+    renderRewardRequests();
+    $('claimedRewardsAdmin').addEventListener('click',e=>{
+      const btn=e.target.closest('[data-fulfil]');if(!btn)return;
+      const item=data.journey&&data.journey.spending&&data.journey.spending.find(x=>x.id===btn.dataset.fulfil);
+      if(!item||item.kind!=='reward'||item.status==='delivered')return;
+      if(!confirm('Confirm that you have delivered '+item.label+' in real life?'))return;
+      item.status='delivered';item.fulfilledAt=new Date().toISOString();save();renderRewardRequests();showToast('Reward marked delivered');
+    });
     const type=$('bonusType'),amount=$('bonusAmount'),reason=$('bonusReason');
     function updateType(){
       amount.disabled=type.value==='piano';
@@ -288,6 +335,7 @@
     anchor.href=url;anchor.download=name;document.body.appendChild(anchor);anchor.click();anchor.remove();
     setTimeout(()=>URL.revokeObjectURL(url),5000);
   }
+  journey=window.createBattleJourney({getData:()=>data,save,regularBP,totalBP,toast:showToast,refresh:render,esc});
   dayFor(currentDate);save();clockTick();render();renderTimer();
   setInterval(()=>{clockTick();timerTick();},500);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){clockTick();timerTick();}});

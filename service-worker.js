@@ -1,6 +1,6 @@
-const CACHE = 'battlepoints-v1';
+const CACHE = 'battlepoints-v2';
 const ROOT = new URL('./', self.location.href);
-const ASSETS = ['./','./index.html','./styles.css','./app.js','./icon.svg','./manifest.webmanifest'];
+const ASSETS = ['./','./index.html','./styles.css','./app.js','./journey.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS.map(file=>new URL(file,ROOT).href))).then(()=>self.skipWaiting()));
 });

@@ -15,7 +15,18 @@
 <div class="app-shell">
   <header class="topbar">
     <div class="brand"><span class="brand-icon" aria-hidden="true">⚔</span><div><strong>BATTLE<span>POINTS</span></strong><small>ETHAN'S MORNING QUEST</small></div></div>
-    <div class="clock-panel"><span class="clock-label">LOCAL TIME</span><time id="liveClock" aria-label="Current time">--:--</time></div>
+    <section class="header-timer" aria-label="Quick countdown timer">
+      <div class="timer-topline"><strong id="timerDisplay" aria-live="off">05:00</strong><span id="timerStatus">READY</span></div>
+      <div class="timer-compact-controls">
+        <div class="stepper">
+          <button id="minuteMinus" type="button" aria-label="One minute less">−</button>
+          <input type="number" id="timerMinutes" inputmode="numeric" min="1" max="120" value="5" aria-label="Countdown minutes">
+          <button id="minutePlus" type="button" aria-label="One minute more">+</button>
+        </div>
+        <button id="timerToggle" class="timer-icon-btn play" type="button" aria-label="Start countdown">▶</button>
+        <button id="timerReset" class="timer-icon-btn" type="button" aria-label="Reset countdown">↺</button>
+      </div>
+    </section>
   </header>
 
   <main id="questView">
@@ -72,12 +83,6 @@
       </div>
     </section>
 
-    <section class="timer-card" aria-labelledby="timerHeading">
-      <div class="section-top"><h2 id="timerHeading"><span aria-hidden="true">◷</span> Quest timer</h2><span class="subtle-label">JUST A VISUAL AID</span></div>
-      <div class="timer-main"><div class="timer-controls"><label for="timerMinutes">MINUTES</label><div class="stepper"><button id="minuteMinus" type="button" aria-label="Subtract one minute">−</button><input type="number" id="timerMinutes" inputmode="numeric" min="1" max="120" value="5" aria-label="Timer minutes"><button id="minutePlus" type="button" aria-label="Add one minute">+</button></div></div><div class="timer-face"><strong id="timerDisplay" aria-live="off">05:00</strong><small id="timerStatus">READY WHEN YOU ARE</small></div></div>
-      <div class="timer-actions"><button class="action-primary" id="timerToggle" type="button">▶ START</button><button class="action-secondary" id="timerReset" type="button">↺ RESET</button></div>
-    </section>
-
     <div class="section-heading"><div><span class="eyebrow">THE DAILY MISSION</span><h2>Three quests. <span>Three points.</span></h2></div><span id="completeCount" class="quest-counter">0 / 3</span></div>
     <section id="questList" class="quest-list" aria-label="Daily quests"></section>
 
@@ -90,17 +95,20 @@
     <details class="reminder-card" id="healthReminders"><summary><span>♡ Health reminder</span><span class="reminder-hint">Not worth BP</span></summary><p>Only tick these if an adult has confirmed they are needed today. Never take medicine to earn points.</p><div class="health-checks"><label class="task-row"><input type="checkbox" data-health="vitamins" id="healthVitamin"><span class="tickbox" aria-hidden="true">✓</span><span class="task-label">Vitamins (if instructed)</span></label><label class="task-row"><input type="checkbox" data-health="medication" id="healthMedication"><span class="tickbox" aria-hidden="true">✓</span><span class="task-label">Medicine (only if instructed)</span></label></div></details>
   </main>
 
-  <main id="statsView" hidden>
-    <div class="page-title"><span class="eyebrow">ADVENTURE LOG</span><h1>Quest history</h1><p>Every small win counts.</p></div>
-    <section class="stats-grid" id="statsHighlights"></section>
-    <section class="stats-panel"><div class="section-top"><h2>Last 7 mornings</h2><span class="subtle-label">REGULAR BP</span></div><div class="chart" id="weekChart" aria-label="Battle Points over the past seven days"></div></section>
-    <section class="stats-panel"><div class="section-top"><h2>Daily records</h2><span class="subtle-label">LATEST FIRST</span></div><div id="historyList" class="history-list"></div></section>
-    <p class="privacy-note">Records are saved in this browser on this device, not on GitHub. Back up the data from the adult panel to keep a copy.</p>
+  <main id="journeyView" hidden>
+    <div class="page-title journey-title"><span class="eyebrow">A TINY PIXEL ADVENTURE</span><h1>Battle Journey</h1><p>Choose a reward or a quick adventure.</p></div>
+    <section id="journeySummary" class="journey-summary"></section>
+    <section class="journey-panel"><div class="section-top"><h2>🎁 Claim real-life rewards</h2><span class="subtle-label">SPEND BP</span></div><div id="rewardShop" class="reward-shop"></div></section>
+    <section class="journey-panel"><div class="section-top"><h2>⚔ Your adventure</h2><span class="subtle-label">SHORT & SWEET</span></div><div id="journeyControls"></div></section>
+    <section id="encounterStage" class="encounter-stage" aria-live="polite"></section>
+    <section class="journey-panel"><div class="section-top"><h2>🛡 Equipment & upgrades</h2><span class="subtle-label">USE GEMS</span></div><div id="gearArea"></div></section>
+    <section class="journey-panel"><div class="section-top"><h2>Recent adventures</h2><span class="subtle-label">LATEST FIRST</span></div><div id="journeyLog"></div></section>
+    <p class="privacy-note">Unlock the journey with your adult PIN. Each day with all 3 regular BP earns one battle or mining encounter.</p>
   </main>
 
   <nav class="bottom-nav" aria-label="Main navigation">
-    <button id="navQuests" class="nav-item active" type="button" aria-current="page"><span aria-hidden="true">⚔</span><small>QUESTS</small></button>
-    <button id="navStats" class="nav-item" type="button"><span aria-hidden="true">▥</span><small>HISTORY</small></button>
+    <button id="navQuests" class="nav-item active" type="button" aria-current="page"><span aria-hidden="true">⚔</span><small>DAILY QUESTS</small></button>
+    <button id="navJourney" class="nav-item" type="button"><span aria-hidden="true">✦</span><small>BATTLE JOURNEY</small></button>
     <button id="navParent" class="nav-item" type="button"><span aria-hidden="true">♙</span><small>ADULT</small></button>
   </nav>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -110,6 +118,7 @@
   <form method="dialog" class="dialog-head"><h2 id="parentDialogTitle">Adult control room</h2><button class="close-btn" aria-label="Close parent controls" value="cancel">✕</button></form>
   <div id="parentBody"></div>
 </dialog>
+<script src="./journey.js" defer></script>
 <script src="./app.js" defer></script>
 </body>
 </html>
