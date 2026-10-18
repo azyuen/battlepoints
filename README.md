@@ -1,4 +1,4 @@
-# BattlePoints — Morning Quest (v2.1)
+# BattlePoints — Morning Quest (v2.2)
 
 A phone-first, installable, offline-friendly checklist for Ethan, with an original pixel-art explorer and a very short Battle Journey.
 
@@ -33,6 +33,26 @@ The adventure is deliberately short and gentle, with little friendly pixel-art c
 - **Real-life rewards**: 5 BP for a Tokyo SHIFT car coupon of choice, or 15 BP for 10 extra minutes of technology time. These redemptions debit the wallet once and record a pending adult delivery confirmation.
 
 **BP accounting:** The wallet shows earned BP less prior purchases and real-life redemptions; BP spent on equipment cannot also purchase real-world rewards. Daily quest scores remain visible after points are spent. If someone retrospectively changes a completed day, available BP can fall to zero, but prior transactions are retained in the audit history. Encounter tokens are derived from eligible full-score dates, and each date can be used only once.
+
+## Developer Mode — isolated local profile
+
+Dev Mode is a device-specific, adult-PIN-unlocked testing profile. It does not clone or modify the LIVE morning records.
+
+**First-time activation on your phone:** open **Adult**, enter the existing adult PIN, then press **UNLOCK DEV ON THIS DEVICE**. From then on, a clearly labelled **ENTER DEV PROFILE / EXIT DEV** toggle is visible below the header whenever the web app is opened on that device. You can relock device access from Adult without deleting the test save.
+
+The DEV profile uses its own browser storage key (`battlepoints-dev-sandbox-v1`), with independent simulated dates, daily checklists, BP ledger, spent rewards, gems, level, equipment and encounters. LIVE still uses `battlepoints-morning-v1` unchanged. A conspicuous orange TEST banner displays while DEV is active.
+
+**Test controls:**
+- **◀ DAY / DAY ▶** navigate simulated calendar dates, without changing your phone clock. Date and test save persist after closing the app.
+- **ALL TASKS** checks the list but leaves the day open for testing the ordinary End Morning button.
+- **+3 BP DAY** completes all tasks and closes the simulated morning, awarding its 3 regular BP and unlocking a Journey encounter.
+- **+1 BP / +5 BP** add testing-only spendable BP, *not* regular quest BP, so they do not create encounters by themselves.
+- **+12 XP** simulates one hero level. **+5 GEMS** gives stones for testing upgrades.
+- **RESET THIS DAY** clears the test checklist and points for the displayed date but preserves any encounter already consumed for that date. **RESET DEV SAVE** starts the entire test profile (equipment, spending and dates) over from scratch. Both reset actions are confirmed.
+
+Journey and Adult screens in an active DEV profile don't require re-entering the PIN. All interactions are confined to its test save.
+
+For safety, the device unlock is a convenience gate held in localStorage. It is **not secure authentication** against someone with developer tools. No real-world rewards are automatically delivered from the app, and DEV reward claims should never be honoured in real life.
 
 ## Privacy and limitations
 

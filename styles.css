@@ -129,3 +129,28 @@
 .encounter-arena-played .mining-svg{animation:gemSpark .65s ease-out}
 @keyframes encounterHeroSwing{0%,100%{transform:translateX(0) rotate(0)}40%{transform:translateX(15px) rotate(7deg)}65%{transform:translateX(-2px) rotate(-2deg)}}
 @media (max-width:360px){.encounter-dialog{padding:13px 10px 16px}.encounter-arena{min-height:187px;padding:6px 3px 11px;grid-template-columns:minmax(0,1fr) 23px minmax(0,1fr)}.encounter-fighter-art{height:147px}.encounter-fighter-art .avatar{height:143px}.encounter-fighter-art .enemy-svg,.encounter-fighter-art .mining-svg{height:140px}.encounter-versus{font-size:13px}}
+
+/* v2.2 isolated developer profile */
+.dev-quick-toggle{position:sticky;top:0;z-index:24;display:block;width:100%;min-height:29px;border:1px solid #6d9bae;border-radius:0 0 9px 9px;background:#34566c;color:#e2f8ff;font:900 11px ui-monospace,monospace;letter-spacing:.6px;margin:-12px 0 13px}
+.dev-quick-toggle[hidden],.dev-panel[hidden]{display:none!important}
+.dev-quick-toggle.active{background:#b86e35;border-color:#e6ac67;color:#fff9e6}
+.dev-panel{background:linear-gradient(160deg,#503c2f,#322d36);border:2px solid #d59a53;box-shadow:0 6px 15px #08101b9c;border-radius:12px;padding:11px;margin-bottom:16px;color:#fcebd3}
+.dev-topline{display:flex;justify-content:space-between;align-items:center;gap:6px;font:900 10px ui-monospace,monospace;letter-spacing:.25px}
+.dev-topline span{color:#ffe193;white-space:nowrap}
+.dev-day-nav{display:flex;align-items:center;gap:7px;justify-content:space-between;margin-top:11px}
+.dev-day-nav button{background:#e6aa64;color:#302c29;border:0;border-radius:7px;padding:12px 8px;font:900 11px ui-monospace,monospace}
+.dev-day-nav strong{font:900 14px ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.dev-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:11px}
+.dev-shortcuts button{background:#435c61;border:1px solid #9ec2be;border-radius:7px;color:#ecf7f1;font:800 11px ui-monospace,monospace;padding:11px 6px}
+.dev-footer{display:flex;gap:8px;margin-top:10px}
+.dev-footer button{flex:1;padding:10px 4px;background:#5b393b;color:#ffd3c2;border:1px solid #b87b73;border-radius:7px;font:800 10px ui-monospace,monospace}
+.dev-parent-section{background:#253c48;border:1px solid #648b9b;border-radius:10px;margin-top:19px;padding:13px}
+.dev-parent-section p{font-size:12px;line-height:1.5;color:#c4dae2;margin:7px 0 12px}
+.dev-parent-section .primary-wide{background:#dda75d}
+.dev-parent-section .secondary-wide{margin-top:8px}
+body.dev-active{background:radial-gradient(ellipse at 50% -100px,#68452f,#1d2634 47%,#171923 90%)}
+body.dev-active .hero-card{border-color:#a77b51}
+@media(max-width:360px){.dev-day-nav strong{font-size:12px}.dev-day-nav button{padding:10px 7px;font-size:10px}}
+
+/* Keep the device toggle below the existing sticky timer header. */
+.dev-quick-toggle{top:105px;z-index:21}

@@ -40,7 +40,7 @@ window.createBattleJourney = function(ctx) {
       const now=new Date();
       const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
       const isToday=key===today;
-      return ctx.regularBP(d)===3&&!d.encounterUsed&&(!isToday||!!d.endedAt);
+      return ctx.regularBP(d)===3&&!d.encounterUsed&&(ctx.isDev&&ctx.isDev()?!!d.endedAt:(!isToday||!!d.endedAt));
     });
   }
   function canSpend(cost){if(wallet()<cost){ctx.toast('Not enough BP yet. Keep questing!');return false;}return true;}

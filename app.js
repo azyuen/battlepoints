@@ -2,6 +2,10 @@
 'use strict';
 (function () {
   const KEY = 'battlepoints-morning-v1';
+  const DEV_KEY = 'battlepoints-dev-sandbox-v1';
+  const DEV_UNLOCK_KEY = 'battlepoints-dev-device-unlocked-v1';
+  const DEV_ACTIVE_KEY = 'battlepoints-dev-active-v1';
+  const DEV_DATE_KEY = 'battlepoints-dev-current-date-v1';
   const quests = [
     {id:'morning', icon:'🛏️', title:'Morning Routine', subtitle:'Bedroom and getting dressed', tasks:[
       ['bed','Make my bed'], ['purifier','Turn off the purifier'],
@@ -22,15 +26,21 @@
   const $ = (id) => document.getElementById(id);
   function todayKey(d = new Date()) {return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
   function emptyData() {return {version:1, settings:{}, days:{}};}
-  function loadData() {
+  function loadData(key=KEY) {
     try {
-      const data = JSON.parse(localStorage.getItem(KEY) || 'null');
+      const data = JSON.parse(localStorage.getItem(key) || 'null');
       if (data && data.version === 1 && data.days && typeof data.days === 'object' && data.settings && typeof data.settings === 'object') return data;
     } catch (e) {console.warn('Saved progress could not be loaded',e);}
     return emptyData();
   }
-  let data = loadData();
-  let currentDate = todayKey();
+  let liveData = loadData(KEY);
+  let devData = loadData(DEV_KEY);
+  let devUnlocked = localStorage.getItem(DEV_UNLOCK_KEY)==='1';
+  let devActive = devUnlocked && localStorage.getItem(DEV_ACTIVE_KEY)==='1';
+  devData.settings = liveData.settings;
+  let data = devActive ? devData : liveData;
+  const savedDevDate = localStorage.getItem(DEV_DATE_KEY);
+  let currentDate = devActive && /^\d{4}-\d{2}-\d{2}$/.test(savedDevDate||'') ? savedDevDate : todayKey();
   let expandedQuest = 'morning';
   let activeTab = 'quests';
   let adultUnlocked = false;
@@ -38,6 +48,116 @@
   let journey = null;
   let toastTimer = null;
   let timerMinutes = 5, remainingSeconds = 300, timerRunning = false, timerDeadline = 0;
+  function renderDevControls() {
+    $('devQuickToggle').hidden=!devUnlocked;
+    $('devQuickToggle').textContent=devActive?'🧪 EXIT DEV · LIVE PROFILE':'🧪 ENTER DEV PROFILE';
+    $('devQuickToggle').classList.toggle('active',devActive);
+    $('devPanel').hidden=!devActive;
+    document.body.classList.toggle('dev-active',devActive);
+    if(!devActive)return;
+    $('devDateLabel').textContent=currentDate;
+    $('devWallet').textContent=(journey?journey.wallet():totalBP())+' BP READY';
+  }
+  function setDevActive(enabled) {
+    if(enabled&&!devUnlocked)return;
+    // The live and dev save files never copy task history, rewards or Journey progress.
+    devActive=!!enabled;
+    localStorage.setItem(DEV_ACTIVE_KEY,devActive?'1':'0');
+    data=devActive?devData:liveData;
+    if(devActive) {
+      devData.settings=liveData.settings;
+      const remembered=localStorage.getItem(DEV_DATE_KEY);
+      currentDate=remembered&&/^\d{4}-\d{2}-\d{2}$/.test(remembered)?remembered:todayKey();
+      adultUnlocked=true;
+    }else{
+      currentDate=todayKey();
+      adultUnlocked=false;
+    }
+    expandedQuest='morning';
+    save();
+    switchTab('quests');
+    render();
+  }
+  function changeDevDate(amount) {
+    if(!devActive)return;
+    const d=new Date(currentDate+'T12:00:00');
+    if(Number.isNaN(d.getTime()))return;
+    d.setDate(d.getDate()+amount);
+    currentDate=todayKey(d);
+    localStorage.setItem(DEV_DATE_KEY,currentDate);
+    expandedQuest='morning';
+    dayFor(currentDate);save();render();
+  }
+  function finishDevMorning() {
+    if(!devActive)return;
+    const day=currentDay();
+    if(day.endedAt){showToast('Test morning already ended. Choose another day.');return;}
+    for(const quest of quests)for(const [id] of quest.tasks)day.tasks[id]={done:true,at:new Date().toISOString()};
+    day.risks={};
+    day.startedAt=day.startedAt||new Date().toISOString();
+    day.finishedAt=new Date().toISOString();
+    day.finalRegularBP=3;
+    day.finalBonusBP=claimedBP(day);
+    day.endedAt=new Date().toISOString();
+    save();render();
+    showToast('Test morning completed · +3 BP and encounter');
+  }
+  function completeDevTasks() {
+    if(!devActive)return;
+    const day=currentDay();
+    if(day.endedAt){showToast('This test morning is closed.');return;}
+    for(const quest of quests)for(const [id] of quest.tasks)day.tasks[id]={done:true,at:new Date().toISOString()};
+    day.risks={};
+    day.startedAt=day.startedAt||new Date().toISOString();
+    day.finishedAt=new Date().toISOString();
+    save();render();
+    showToast('All steps checked in TEST profile');
+  }
+  function grantDevPoints(n) {
+    if(!devActive)return;
+    const day=currentDay();
+    day.devBP=Math.max(0,Number(day.devBP)||0)+n;
+    save();render();
+    showToast('+'+n+' TEST BP · not a regular quest point');
+  }
+  $('devQuickToggle').addEventListener('click',()=>setDevActive(!devActive));
+  $('devPrev').addEventListener('click',()=>changeDevDate(-1));
+  $('devNext').addEventListener('click',()=>changeDevDate(1));
+  $('devComplete').addEventListener('click',completeDevTasks);
+  $('devFinish').addEventListener('click',finishDevMorning);
+  $('devAddOne').addEventListener('click',()=>grantDevPoints(1));
+  $('devAddFive').addEventListener('click',()=>grantDevPoints(5));
+  $('devAddXP').addEventListener('click',()=>{
+    if(!devActive)return;
+    if(!data.journey)data.journey={};
+    data.journey.xp=(Math.max(0,Number(data.journey.xp)||0))+12;
+    save();render();showToast('+12 TEST XP — one hero level');
+  });
+  $('devAddGems').addEventListener('click',()=>{
+    if(!devActive)return;
+    if(!data.journey)data.journey={};
+    if(!data.journey.gems)data.journey.gems={};
+    for(const [gem,n] of [['quartz',3],['ruby',1],['sapphire',1]]){
+      data.journey.gems[gem]=(Math.max(0,Number(data.journey.gems[gem])||0))+n;
+    }
+    save();render();showToast('+5 TEST gems added');
+  });
+  $('devResetDay').addEventListener('click',()=>{
+    if(!devActive||!confirm('Reset this TEST date? LIVE data stays safe. Encounters used on this date remain spent.'))return;
+    const old=currentDay();
+    data.days[currentDate]={tasks:{},bonuses:[],startedAt:null,encounterUsed:old.encounterUsed||null,encounterUsedAt:old.encounterUsedAt||null};
+    save();render();showToast('Test date reset');
+  });
+  $('devResetAll').addEventListener('click',()=>{
+    if(!devActive||!confirm('Delete ALL TEST BP, dates, encounters and equipment on this device? LIVE history will not change.'))return;
+    devData=emptyData();
+    devData.settings=liveData.settings;
+    data=devData;
+    currentDate=todayKey();
+    localStorage.setItem(DEV_DATE_KEY,currentDate);
+    dayFor(currentDate);
+    save();render();showToast('Test profile reset');
+  });
   function dayFor(key) {
     if (!data.days[key]) data.days[key] = {tasks:{},bonuses:[],startedAt:null};
     const day = data.days[key];
@@ -46,11 +166,12 @@
     return day;
   }
   function save() {
-    try {localStorage.setItem(KEY,JSON.stringify(data));}
+    try {localStorage.setItem(devActive?DEV_KEY:KEY,JSON.stringify(data));}
     catch(e){showToast('Device storage is full or unavailable');}
   }
   function currentDay() {return dayFor(currentDate);}
   function ensureDate() {
+    if(devActive)return;
     const key = todayKey();
     if (key !== currentDate) {currentDate = key; expandedQuest = 'morning';dayFor(key);save();render();}
   }
@@ -59,7 +180,7 @@
   function questDone(day,q) {return q.tasks.every(t=>taskDone(day,t[0]));}
   function regularBP(day) {if(day.endedAt&&Number.isInteger(day.finalRegularBP))return day.finalRegularBP;return quests.filter(q=>questDone(day,q)&&!(day.risks&&day.risks[q.id]&&day.risks[q.id].forfeited)).length;}
   function claimedBP(day) {if(day.endedAt&&Number.isInteger(day.finalBonusBP))return day.finalBonusBP;return day.bonuses.reduce((n,b)=>n+(b.claimedAt ? Number(b.amount)||0 : 0),0);}
-  function allBP(day) {return regularBP(day)+claimedBP(day);}
+  function allBP(day) {return regularBP(day)+claimedBP(day)+(devActive?Math.max(0,Number(day.devBP)||0):0);}
   function totalBP() {return Object.values(data.days).reduce((n,d)=>n+allBP(d),0);}
   function level() {return journey ? journey.level() : 1;}
   function esc(str) {return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -112,7 +233,7 @@
     $('bonusList').innerHTML=rows+pending.map(renderBonus).join('')+claimed.map(renderBonus).join('');
   }
   function renderHealth() {const day=currentDay(),health=day.health||{};$('healthVitamin').checked=!!(health.vitamins&&health.vitamins.done);$('healthMedication').checked=!!(health.medication&&health.medication.done);$('healthVitamin').disabled=!!day.endedAt;$('healthMedication').disabled=!!day.endedAt;}
-  function render() {const day=currentDay(),closed=Boolean(day.endedAt);$('questView').classList.toggle('morning-ended',closed);$('endMorning').disabled=closed;$('endMorning').textContent=closed?'MORNING ENDED · '+(regularBP(day)+claimedBP(day))+' BP LOCKED':'END THE MORNING';$('endMorningHint').textContent=closed?'The day is finished. Come back tomorrow for a fresh checklist.':'Finish for today. The checklist and Battle Points will be locked until tomorrow.';renderQuests();renderBonuses();renderHealth();if(activeTab==='journey'&&journey)journey.render();if(adultUnlocked&&$('statsHighlights'))renderStats();}
+  function render() {const day=currentDay(),closed=Boolean(day.endedAt);$('questView').classList.toggle('morning-ended',closed);$('endMorning').disabled=closed;$('endMorning').textContent=closed?'MORNING ENDED · '+(regularBP(day)+claimedBP(day))+' BP LOCKED':'END THE MORNING';$('endMorningHint').textContent=closed?'The day is finished. Come back tomorrow for a fresh checklist.':'Finish for today. The checklist and Battle Points will be locked until tomorrow.';renderQuests();renderBonuses();renderHealth();if(activeTab==='journey'&&journey)journey.render();if(adultUnlocked&&$('statsHighlights'))renderStats();renderDevControls();}
   $('healthReminders').addEventListener('change',(e)=>{const id=e.target.dataset.health;if(id!=='vitamins'&&id!=='medication')return;const day=currentDay();if(day.endedAt)return;if(!day.health)day.health={};day.health[id]={done:e.target.checked,at:new Date().toISOString()};save();});
   $('questList').addEventListener('click',(e)=>{
     if(currentDay().endedAt)return;
@@ -179,7 +300,7 @@
     $('navJourney').classList.toggle('active',which==='journey');
     $('navQuests').setAttribute('aria-current',which==='quests'?'page':'false');
     $('navJourney').setAttribute('aria-current',which==='journey'?'page':'false');
-    if(previous==='journey'&&which!=='journey')adultUnlocked=false;
+    if(previous==='journey'&&which!=='journey'&&!devActive)adultUnlocked=false;
     if(which==='journey'&&journey)journey.render();
     window.scrollTo({top:0,behavior:'instant'});
   }
@@ -191,7 +312,7 @@
   });
   $('navJourney').addEventListener('click',()=>openParentGate('journey'));
   function lastDays(n) {
-    const out=[];const date=new Date();date.setHours(12,0,0,0);
+    const out=[];const date=devActive?new Date(currentDate+'T12:00:00'):new Date();date.setHours(12,0,0,0);
     for(let i=n-1;i>=0;i--){const d=new Date(date);d.setDate(date.getDate()-i);out.push(todayKey(d));}
     return out;
   }
@@ -221,6 +342,15 @@
   function validPin(pin) {return /^\d{4,8}$/.test(pin);}
   const dialog=$('parentDialog');
   function openParentGate(action) {
+    if(devActive){
+      pendingParentAction=action;adultUnlocked=true;
+      if(action==='journey'){switchTab('journey');return;}
+      $('parentDialogTitle').textContent='🧪 Dev control room';
+      if(action==='piano')addBonus('piano','Completed piano practice',1);
+      else if(action==='other'){renderQuickBonus();if(!dialog.open)dialog.showModal();}
+      else {renderParentDashboard();if(!dialog.open)dialog.showModal();}
+      return;
+    }
     if(currentDay().endedAt&&(action==='piano'||action==='other')){showToast('The morning has ended. Bonuses are locked.');return;}
     pendingParentAction=action;adultUnlocked=false;
     $('parentDialogTitle').textContent=action==='journey'?'Unlock Battle Journey':action==='piano'?'🎹 Piano bonus':action==='other'?'🌟 Extra bonus':'Adult control room';
@@ -241,7 +371,7 @@
     $('quickBonusForm').addEventListener('submit',e=>{e.preventDefault();const text=$('quickReason').value.trim();if(text)addBonus('other',text,Number($('quickAmount').value));});
   }
   function renderParentLock() {
-    const setup=!data.settings.hash;
+    const setup=!liveData.settings.hash;
     $('parentBody').innerHTML='<p class="parent-copy">'+(setup?'First visit: create a 4–8 digit PIN to keep bonus decisions in adult hands.':'Enter your adult PIN to approve bonus rewards and manage backups.')+'</p><form id="parentLockForm" class="form-stack"><label>Adult PIN<input id="adultPin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" autocomplete="off" required></label>'+(setup?'<label>Confirm PIN<input id="adultPinConfirm" type="password" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" autocomplete="off" required></label>':'')+'<div id="pinError" class="form-error" role="alert"></div><button type="submit" class="primary-wide">'+(setup?'CREATE ADULT PIN':'UNLOCK REWARDS')+'</button></form><p class="mini-muted">The PIN is a simple family gate, not strong security. All records stay on this device.</p>';
     $('parentLockForm').addEventListener('submit',async (e)=>{
       e.preventDefault();
@@ -252,11 +382,11 @@
         try{
           const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
           const salt=Array.from(bytes).map(v=>v.toString(16).padStart(2,'0')).join('');
-          data.settings={salt,hash:await pinHash(salt,pin)};save();
+          liveData.settings={salt,hash:await pinHash(salt,pin)};data.settings=liveData.settings;localStorage.setItem(KEY,JSON.stringify(liveData));save();
         }catch(e){$('pinError').textContent='Secure PIN setup requires HTTPS or localhost.';return;}
       }else{
         try{
-          if(await pinHash(data.settings.salt,pin)!==data.settings.hash){$('pinError').textContent='Incorrect PIN. Try again.';return;}
+          if(await pinHash(liveData.settings.salt,pin)!==liveData.settings.hash){$('pinError').textContent='Incorrect PIN. Try again.';return;}
         }catch(e){$('pinError').textContent='PIN verification unavailable in this browser.';return;}
       }
       adultUnlocked=true;
@@ -282,11 +412,24 @@
       '<div id="bonusError" class="form-error" role="alert"></div><button type="submit" class="primary-wide">MAKE BONUS AVAILABLE</button></form>'+
       '<div class="parent-section"><h3>Waiting to be claimed</h3><div id="pendingAdmin">'+(pending.length?pending.map(b=>'<div class="pending-row"><span>'+esc(b.reason)+' · +'+Number(b.amount)+' BP</span><button type="button" data-cancel="'+esc(b.id)+'">CANCEL</button></div>').join(''):'<p class="mini-muted">No unclaimed bonuses right now.</p>')+'</div></div>'+
       '<div class="parent-section"><h3>Keep a backup</h3><p class="mini-muted">Your records are only saved in this browser. Export a backup before changing devices, clearing site data, or reinstalling.</p><div class="backup-actions"><button id="exportData" class="secondary-wide" type="button">EXPORT JSON</button><button id="importButton" class="secondary-wide" type="button">IMPORT JSON</button></div><input type="file" id="importFile" accept="application/json,.json" hidden></div>'+
+      '<section class="dev-parent-section"><h3>🧪 Developer profile</h3><p>One-time PIN unlock for this device. Separate test history, BP and Journey. LIVE progress is never copied into TEST.</p><button id="devAdultToggle" class="primary-wide" type="button">'+(devUnlocked?(devActive?'EXIT DEV PROFILE':'ENTER DEV PROFILE'):'UNLOCK DEV ON THIS DEVICE')+'</button>'+(devUnlocked?'<button id="devLockDevice" class="secondary-wide" type="button">RELOCK DEV ACCESS</button>':'')+'</section>'+
       '<div class="parent-section"><h3>Adult access</h3><p class="mini-muted">4–8 digit PIN. Resetting the PIN requires the current PIN; data never leaves this browser automatically.</p><button id="changePin" type="button" class="secondary-wide">CHANGE PIN</button><div id="pinChangeArea"></div></div>'+
       '<div class="parent-section"><h3>Daily history & statistics</h3><p class="mini-muted">Daily statistics now live in the adult control room.</p><div class="stats-grid" id="statsHighlights"></div><div class="stats-panel"><div class="section-top"><h2>Last 7 mornings</h2><span class="subtle-label">REGULAR BP</span></div><div class="chart" id="weekChart"></div></div><div class="stats-panel"><h2>Daily records</h2><div id="historyList" class="history-list"></div></div></div>'+
       '<div class="parent-section"><h3>Real-world rewards awaiting delivery</h3><div id="claimedRewardsAdmin"></div></div>';
     renderStats();
     renderRewardRequests();
+    $('devAdultToggle').addEventListener('click',()=>{
+      if(!devUnlocked){devUnlocked=true;localStorage.setItem(DEV_UNLOCK_KEY,'1');}
+      setDevActive(!devActive);
+      dialog.close();
+      showToast(devActive?'TEST profile active. LIVE progress is safe.':'LIVE profile restored');
+    });
+    if(devUnlocked)$('devLockDevice').addEventListener('click',()=>{
+      if(!confirm('Relock Dev access on this device? The separate test save will be kept.'))return;
+      setDevActive(false);
+      devUnlocked=false;localStorage.removeItem(DEV_UNLOCK_KEY);localStorage.removeItem(DEV_ACTIVE_KEY);
+      dialog.close();renderDevControls();showToast('Dev access relocked');
+    });
     $('claimedRewardsAdmin').addEventListener('click',e=>{
       const btn=e.target.closest('[data-fulfil]');if(!btn)return;
       const item=data.journey&&data.journey.spending&&data.journey.spending.find(x=>x.id===btn.dataset.fulfil);
@@ -329,7 +472,9 @@
         const incoming=JSON.parse(await file.text());
         if(incoming.version!==1||!incoming.days||typeof incoming.days!=='object'||Array.isArray(incoming.days)||!incoming.settings||typeof incoming.settings!=='object')throw Error('Invalid backup');
         if(!confirm('Replace ALL progress and the adult PIN on this device with this backup?'))return;
-        data=incoming;dayFor(currentDate);save();render();dialog.close();showToast('Backup restored');
+        if(devActive){devData=incoming;devData.settings=liveData.settings;data=devData;}
+        else {liveData=incoming;data=liveData;devData.settings=liveData.settings;}
+        dayFor(currentDate);save();render();dialog.close();showToast('Backup restored');
       }catch(err){showToast('That file is not a BattlePoints backup');}
     });
     $('changePin').addEventListener('click',()=>{
@@ -339,7 +484,7 @@
         if(!validPin(pin)||pin!==$('newPinConfirm').value){$('changePinError').textContent='PINs must match and contain 4–8 digits.';return;}
         const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
         const salt=Array.from(bytes).map(v=>v.toString(16).padStart(2,'0')).join('');
-        data.settings={salt,hash:await pinHash(salt,pin)};save();renderParentDashboard();showToast('PIN updated');
+        liveData.settings={salt,hash:await pinHash(salt,pin)};data.settings=liveData.settings;localStorage.setItem(KEY,JSON.stringify(liveData));save();renderParentDashboard();showToast('PIN updated');
       });
     });
   }
@@ -348,7 +493,7 @@
     anchor.href=url;anchor.download=name;document.body.appendChild(anchor);anchor.click();anchor.remove();
     setTimeout(()=>URL.revokeObjectURL(url),5000);
   }
-  journey=window.createBattleJourney({getData:()=>data,save,regularBP,totalBP,toast:showToast,refresh:render,esc});
+  journey=window.createBattleJourney({getData:()=>data,save,regularBP,totalBP,toast:showToast,refresh:render,esc,isDev:()=>devActive});
   dayFor(currentDate);save();clockTick();render();renderTimer();
   setInterval(()=>{clockTick();timerTick();},500);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){clockTick();timerTick();}});

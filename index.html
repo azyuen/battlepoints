@@ -28,6 +28,24 @@
       </div>
     </section>
   </header>
+  <button id="devQuickToggle" class="dev-quick-toggle" type="button" hidden>🧪 ENTER DEV</button>
+  <section id="devPanel" class="dev-panel" aria-label="Developer testing controls" hidden>
+    <div class="dev-topline"><strong>🧪 DEV PROFILE · TEST DATA ONLY</strong><span id="devWallet">0 BP</span></div>
+    <div class="dev-day-nav">
+      <button id="devPrev" type="button" aria-label="Previous simulated day">◀ DAY</button>
+      <strong id="devDateLabel">—</strong>
+      <button id="devNext" type="button" aria-label="Next simulated day">DAY ▶</button>
+    </div>
+    <div class="dev-shortcuts">
+      <button id="devComplete" type="button">✓ ALL TASKS</button>
+      <button id="devFinish" type="button">★ +3 BP DAY</button>
+      <button id="devAddOne" type="button">+1 BP</button>
+      <button id="devAddFive" type="button">+5 BP</button>
+      <button id="devAddXP" type="button">+12 XP</button>
+      <button id="devAddGems" type="button">+5 GEMS</button>
+    </div>
+    <div class="dev-footer"><button id="devResetDay" type="button">RESET THIS DAY</button><button id="devResetAll" type="button">RESET DEV SAVE</button></div>
+  </section>
 
   <main id="questView">
     <section class="hero-card" aria-label="Ethan's character and Battle Points">
