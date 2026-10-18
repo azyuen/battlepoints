@@ -83,3 +83,49 @@
 .pixel-party .journey-character-avatar .avatar{height:99px;max-width:none;animation:none;filter:drop-shadow(0 4px 2px #10151e90)}
 .pixel-party .journey-character-avatar.skin-forest .avatar{filter:hue-rotate(85deg) drop-shadow(0 4px 2px #10151e90)}
 .pixel-party .journey-character-avatar.skin-sunset .avatar{filter:hue-rotate(210deg) drop-shadow(0 4px 2px #10151e90)}
+
+
+/* v2.1 — End the Morning: quiet, final and non-interactive */
+.end-morning-section{margin:23px 0 10px;padding:18px 14px;text-align:center;border:1px solid #455368;border-radius:12px;background:#1b2b3f}
+.end-morning-button{width:100%;min-height:52px;border:1px solid #9aa9b7;border-radius:9px;background:#34485e;color:#f1f3f7;font:900 14px ui-monospace,monospace;letter-spacing:.8px}
+.end-morning-button:not(:disabled):active{background:#48586b}
+.end-morning-hint{color:#b1bfcc;font-size:11px;line-height:1.55;margin:10px 3px 0}
+.morning-ended :is(.hero-card,.quest-list,.bonus-card,.reminder-card){filter:grayscale(1);opacity:.45;pointer-events:none}
+.morning-ended .avatar{animation:none!important}
+.morning-ended .end-morning-section{background:#161e29;border-color:#3b4854}
+.morning-ended .end-morning-button{background:#2b343e;color:#9cabb5;border:1px solid #46535c;cursor:default}
+.morning-ended .end-morning-hint{color:#94a1ad}
+.morning-ended .quest-toggle,.morning-ended input[type="checkbox"]{cursor:default}
+.risk-closed{font:800 10px ui-monospace,monospace;color:#cad4d9;padding:4px 0;margin-top:5px}
+
+/* v2.1 — two-step pop-up encounters */
+.encounter-dialog{width:min(458px,calc(100% - 24px));max-height:min(86dvh,780px);overflow-y:auto;margin:auto;padding:19px 17px 20px;color:#f5f5f2;background:linear-gradient(155deg,#263d5e,#17273e 72%);border:2px solid #8fa0b5;border-radius:19px;box-shadow:0 20px 72px #020918e8}
+.encounter-dialog::backdrop{background:rgba(3,9,21,.78);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.encounter-modal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.encounter-dialog .close-btn{height:32px;width:32px;flex:0 0 32px}
+.encounter-intro{text-align:center;margin:4px auto 12px;max-width:340px}
+.encounter-intro h2{font:900 clamp(19px,5vw,24px)/1.2 ui-monospace,monospace;letter-spacing:-.8px;color:#f9d78e}
+.encounter-intro p{font-size:12px;color:#d3e1ee;line-height:1.5;margin-top:8px}
+.encounter-arena{display:grid;grid-template-columns:minmax(0,1fr) 31px minmax(0,1fr);align-items:end;gap:2px;min-height:211px;padding:8px 7px 13px;border:1px solid #7086a6;border-radius:14px;background:radial-gradient(ellipse at center 78%,#41618b,#2b4366 62%,#1b3456 100%);position:relative;overflow:hidden}
+.encounter-arena:before{content:"";position:absolute;left:0;right:0;bottom:0;height:24%;background:repeating-linear-gradient(90deg,#294263 0 19px,#2c4667 19px 38px);opacity:.9}
+.encounter-fighter{display:flex;flex-direction:column;justify-content:end;align-items:center;min-width:0;position:relative;z-index:1}
+.encounter-fighter-art{height:168px;width:100%;display:flex;align-items:end;justify-content:center}
+.encounter-fighter-art .avatar{height:158px;width:auto;min-width:0;max-width:none;filter:drop-shadow(0 5px 1px #112038a3);animation:none}
+.encounter-fighter-art .enemy-svg{height:156px;width:min(100%,167px);filter:drop-shadow(0 6px 1px #11203899)}
+.encounter-fighter-art .mining-svg{height:156px;width:min(100%,168px);filter:drop-shadow(0 6px 1px #112038a8)}
+.encounter-hero-placeholder{font-size:90px}
+.encounter-fighter>span{display:block;font:900 10px/1.2 ui-monospace,monospace;letter-spacing:.4px;color:#e2edee;white-space:nowrap;margin-top:4px;text-shadow:0 2px #102038}
+.encounter-versus{align-self:center;text-align:center;color:#ffe7ac;font:900 17px ui-monospace,monospace;text-shadow:0 2px #121e36;z-index:1}
+.encounter-attempt{font-size:12px;color:#c0d7e6;text-align:center;margin:15px 3px 12px}
+.encounter-action{display:block;width:100%;min-height:50px;margin-top:13px;border:1px solid #ffe4a8;border-radius:9px;background:#f6cb6a;color:#2d302e;font:900 16px ui-monospace,monospace;box-shadow:0 4px 0 #896b3e}
+.encounter-action:active{transform:translateY(3px);box-shadow:0 1px 0 #896b3e}
+.encounter-next{background:#a2e4c8;border-color:#ceffe8;box-shadow:0 4px 0 #4d8971}
+.encounter-loot{text-align:center;margin:17px 0 4px;padding:13px 10px;background:#314966;border:1px solid #728ba4;border-radius:10px}
+.encounter-loot strong{display:block;color:#f8deaa;font:900 15px ui-monospace,monospace}
+.encounter-loot p{font-size:12px;color:#e1e9f1;line-height:1.5;margin-top:8px}
+.encounter-loot small{display:block;margin-top:9px;color:#b6e5cd;font:800 10px ui-monospace,monospace;line-height:1.4}
+.encounter-arena-played .encounter-target .enemy-svg{animation:creatureBounce .8s ease-out}
+.encounter-arena-played .encounter-hero .avatar{animation:encounterHeroSwing .6s ease-out}
+.encounter-arena-played .mining-svg{animation:gemSpark .65s ease-out}
+@keyframes encounterHeroSwing{0%,100%{transform:translateX(0) rotate(0)}40%{transform:translateX(15px) rotate(7deg)}65%{transform:translateX(-2px) rotate(-2deg)}}
+@media (max-width:360px){.encounter-dialog{padding:13px 10px 16px}.encounter-arena{min-height:187px;padding:6px 3px 11px;grid-template-columns:minmax(0,1fr) 23px minmax(0,1fr)}.encounter-fighter-art{height:147px}.encounter-fighter-art .avatar{height:143px}.encounter-fighter-art .enemy-svg,.encounter-fighter-art .mining-svg{height:140px}.encounter-versus{font-size:13px}}

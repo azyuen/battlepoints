@@ -93,6 +93,10 @@
     </section>
 
     <details class="reminder-card" id="healthReminders"><summary><span>♡ Health reminder</span><span class="reminder-hint">Not worth BP</span></summary><p>Only tick these if an adult has confirmed they are needed today. Never take medicine to earn points.</p><div class="health-checks"><label class="task-row"><input type="checkbox" data-health="vitamins" id="healthVitamin"><span class="tickbox" aria-hidden="true">✓</span><span class="task-label">Vitamins (if instructed)</span></label><label class="task-row"><input type="checkbox" data-health="medication" id="healthMedication"><span class="tickbox" aria-hidden="true">✓</span><span class="task-label">Medicine (only if instructed)</span></label></div></details>
+    <section class="end-morning-section" aria-label="End the Morning">
+      <button id="endMorning" class="end-morning-button" type="button">END THE MORNING</button>
+      <p id="endMorningHint" class="end-morning-hint">Finish for today. The checklist and Battle Points will be locked until tomorrow.</p>
+    </section>
   </main>
 
   <main id="journeyView" hidden>
@@ -100,7 +104,6 @@
     <section id="journeySummary" class="journey-summary"></section>
     <section class="journey-panel"><div class="section-top"><h2>🎁 Claim real-life rewards</h2><span class="subtle-label">SPEND BP</span></div><div id="rewardShop" class="reward-shop"></div></section>
     <section class="journey-panel"><div class="section-top"><h2>⚔ Your adventure</h2><span class="subtle-label">SHORT & SWEET</span></div><div id="journeyControls"></div></section>
-    <section id="encounterStage" class="encounter-stage" aria-live="polite"></section>
     <section class="journey-panel"><div class="section-top"><h2>🛡 Equipment & upgrades</h2><span class="subtle-label">USE GEMS</span></div><div id="gearArea"></div></section>
     <section class="journey-panel"><div class="section-top"><h2>Recent adventures</h2><span class="subtle-label">LATEST FIRST</span></div><div id="journeyLog"></div></section>
     <p class="privacy-note">Unlock the journey with your adult PIN. Each day with all 3 regular BP earns one battle or mining encounter.</p>
@@ -117,6 +120,13 @@
 <dialog id="parentDialog" class="parent-dialog" aria-labelledby="parentDialogTitle">
   <form method="dialog" class="dialog-head"><h2 id="parentDialogTitle">Adult control room</h2><button class="close-btn" aria-label="Close parent controls" value="cancel">✕</button></form>
   <div id="parentBody"></div>
+</dialog>
+<dialog id="encounterDialog" class="encounter-dialog" aria-labelledby="encounterTitle">
+  <div class="encounter-modal-top">
+    <span class="eyebrow">A LITTLE ADVENTURE</span>
+    <button id="encounterClose" class="close-btn" aria-label="Close encounter" type="button">✕</button>
+  </div>
+  <div id="encounterBody" aria-live="polite"></div>
 </dialog>
 <script src="./journey.js" defer></script>
 <script src="./app.js" defer></script>

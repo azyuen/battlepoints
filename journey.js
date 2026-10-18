@@ -36,7 +36,11 @@ window.createBattleJourney = function(ctx) {
   function pending() {
     return Object.keys(ctx.getData().days).sort().filter(key=>{
       const d=ctx.getData().days[key];
-      return ctx.regularBP(d)===3&&!d.encounterUsed;
+      // A new morning must be closed before its encounter can be played; older saves stay eligible.
+      const now=new Date();
+      const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+      const isToday=key===today;
+      return ctx.regularBP(d)===3&&!d.encounterUsed&&(!isToday||!!d.endedAt);
     });
   }
   function canSpend(cost){if(wallet()<cost){ctx.toast('Not enough BP yet. Keep questing!');return false;}return true;}
@@ -61,49 +65,96 @@ window.createBattleJourney = function(ctx) {
       '<rect x="51" y="69" width="11" height="5" fill="'+enemy.eyes+'"/><rect x="28" y="66" width="7" height="4" fill="#ffebea" opacity=".7"/><rect x="80" y="66" width="7" height="4" fill="#ffebea" opacity=".7"/>'+
       '</svg>';
   }
-  function runEncounter(mode,batch) {
+  let activeEncounter=null;
+  const encounterDialog=$('encounterDialog');
+  function miningArt(broken){
+    return '<svg class="mining-svg" viewBox="0 0 152 132" role="img" aria-label="'+(broken?'A sparkling gemstone':'A little rock with crystals')+'" shape-rendering="crispEdges">'+
+      '<ellipse cx="77" cy="119" rx="56" ry="9" fill="#0a1830" opacity=".4"/>'+
+      (broken?'<path d="M55 65h46v12h12v24H43V77h12z" fill="#e4b8f8"/><path d="M64 49h27v17H64z" fill="#fff0f7"/><path d="M68 76h21v24H68z" fill="#b27fd2"/><path d="M57 76h10v9H57z" fill="#fff6fc"/><path d="M91 81h13v11H91z" fill="#f4e2fc"/><path d="M27 46h8v8h-8zm99 19h7v7h-7zM84 17h7v7h-7z" fill="#ffe4a1"/>':
+      '<path d="M39 86V59h11V43h20V30h31v14h15v17h12v37h-11v15H37V98H24V86z" fill="#57677c"/>'+
+      '<path d="M42 61h16V46h31v-8h11v12h15v16h9v27h-17v13H45V93H34V72h8z" fill="#8899a7"/>'+
+      '<path d="M51 72h22v15H51z" fill="#65738b"/><path d="M84 54h15v14H84z" fill="#a8bfd0"/>'+
+      '<path d="M63 37h13v12H63z" fill="#9fdde7"/><path d="M72 27h17v13H72z" fill="#c9f7f2"/>'+
+      '<path d="M96 75h13v17H96z" fill="#d5bded"/><path d="M90 88h17v10H90z" fill="#a886c8"/>')+
+      '</svg>';
+  }
+  function heroScene(){
+    const sprite=document.querySelector('.hero-card .avatar');
+    return sprite?sprite.outerHTML:'<span class="encounter-hero-placeholder">🛡</span>';
+  }
+  function modalScene(mode,foe,done){
+    return '<div class="encounter-arena '+(done?'encounter-arena-played':'')+'">'+
+      '<div class="encounter-fighter encounter-hero"><div class="encounter-fighter-art">'+heroScene()+'</div><span>YOUR HERO</span></div>'+
+      '<span class="encounter-versus">'+(mode==='battle'?'VS':'➜')+'</span>'+
+      '<div class="encounter-fighter encounter-target"><div class="encounter-fighter-art">'+(mode==='battle'?enemyArt(foe):miningArt(done))+'</div><span>'+(mode==='battle'?esc(foe.name):'MYSTERY ROCK')+'</span></div></div>';
+  }
+  function showEncounterStart() {
+    if(!activeEncounter)return;
+    const e=activeEncounter;
+    $('encounterBody').innerHTML='<div class="encounter-intro"><h2 id="encounterTitle">'+(e.mode==='battle'?'A Friendly Battle!':'The Crystal Mine')+'</h2>'+
+      '<p>'+(e.mode==='battle'?'A little '+esc(e.enemy.name)+' wants to play! Ready your sword.':'You spot something shining inside a rock. Get your pickaxe!')+'</p></div>'+
+      modalScene(e.mode,e.enemy,false)+
+      '<p class="encounter-attempt">'+(e.dates.length===1?'1 encounter':e.dates.length+' encounters in this batch')+' · 1 action, then the result</p>'+
+      '<button type="button" class="encounter-action" data-encounter-step="act">'+(e.mode==='battle'?'⚔ ATTACK!':'⛏ DIG!')+'</button>';
+  }
+  function openEncounter(mode,batch) {
+    if(encounterDialog.open)return;
     const queue=pending();
-    if(!queue.length){ctx.toast('Earn all 3 daily BP to unlock an encounter.');return;}
+    if(!queue.length){ctx.toast('Finish all 3 quests and end the morning to unlock an encounter.');return;}
     if(!state().starter){ctx.toast('Get the starter sword + pickaxe first (3 BP).');return;}
-    const count=batch?queue.length:1;
-    const messages=[];
-    for(const date of queue.slice(0,count)) {
+    const enemyLevel=1+Math.floor(state().encounters.filter(e=>e.mode==='battle'&&e.win).length/3);
+    activeEncounter={mode,dates:queue.slice(0,batch?queue.length:1),enemy:enemies[(enemyLevel-1)%enemies.length],done:false};
+    showEncounterStart();
+    encounterDialog.showModal();
+  }
+  function resolveEncounter(){
+    const e=activeEncounter;
+    if(!e||e.done)return;
+    e.done=true; // guard against duplicate tapping and double rewards
+    const stories=[];
+    let gainedXP=0, mined=0, wins=0;
+    for(const date of e.dates) {
       const day=ctx.getData().days[date];
-      if(ctx.regularBP(day)!==3||day.encounterUsed)continue;
+      if(!day||ctx.regularBP(day)!==3||day.encounterUsed)continue;
       const j=state(),when=new Date().toISOString();
-      const enemyLv=1+Math.floor(j.encounters.filter(e=>e.mode==='battle'&&e.win).length/3);
-      const encounter={date,at:when,mode,level:enemyLv};
-      if(mode==='mine'){
+      const enemyLv=1+Math.floor(j.encounters.filter(x=>x.mode==='battle'&&x.win).length/3);
+      const entry={date,at:when,mode:e.mode,level:enemyLv};
+      if(e.mode==='mine'){
         const roll=Math.random();
         const gem=roll<.64?'quartz':roll<.82?'ruby':roll<.94?'sapphire':'emerald';
         const qty=(j.pickaxe>=3&&Math.random()<.3)?2:1;
-        j.gems[gem]+=qty;j.xp+=2;
-        encounter.gem=gem;encounter.qty=qty;
-        encounter.story='⛏ Found '+qty+' '+labels[gem].split(' ').slice(1).join(' ')+' stone'+(qty>1?'s':'')+'!';
-        messages.push(encounter.story);
+        j.gems[gem]+=qty;j.xp+=2;gainedXP+=2;mined+=qty;
+        entry.gem=gem;entry.qty=qty;
+        entry.story='⛏ Found '+qty+' '+labels[gem].split(' ').slice(1).join(' ')+' stone'+(qty>1?'s':'')+'!';
       }else{
-        const attack=3+j.sword+Math.floor(level()/2);
-        const enemyHealth=3+enemyLv*2;
-        const enemyName=enemies[(enemyLv-1)%enemies.length].name;
+        const attack=3+j.sword+Math.floor(level()/2),enemyHealth=3+enemyLv*2;
+        const name=enemies[(enemyLv-1)%enemies.length].name;
         const win=Math.random()<Math.min(.98,Math.max(.55,.88+(attack-enemyHealth)*.04));
-        j.xp+=win?4:2;
-        encounter.win=win;encounter.enemy=enemyName;encounter.attack=attack;encounter.enemyHealth=enemyHealth;
-        encounter.story=win?'⚔ '+enemyName+' befriended! +4 XP':'⚔ '+enemyName+' scampered away! +2 XP';
-        messages.push(encounter.story);
+        const xp=win?4:2;j.xp+=xp;gainedXP+=xp;if(win)wins++;
+        entry.win=win;entry.enemy=name;entry.attack=attack;entry.enemyHealth=enemyHealth;
+        entry.story=win?'⚔ '+name+' befriended! +4 XP':'⚔ '+name+' scampered away! +2 XP';
       }
-      day.encounterUsed=mode;day.encounterUsedAt=when;
-      j.encounters.push(encounter);
+      day.encounterUsed=e.mode;day.encounterUsedAt=when;
+      j.encounters.push(entry);stories.push(entry.story);
     }
     ctx.save();ctx.refresh();
-    const last=state().encounters[state().encounters.length-1];
-    const creature=enemies[(Math.max(1,last?.level||1)-1)%enemies.length];
-    $('encounterStage').innerHTML='<div class="encounter-result '+(mode==='battle'?'battle-anim':'mine-anim')+'">'+
-      '<div class="encounter-scene">'+(mode==='battle'?enemyArt(creature):'<div class="gem-art" aria-label="Sparkling mineral stone">💎</div>')+'</div>'+
-      '<strong>'+(batch?''+count+' encounters completed!':mode==='mine'?'Treasure discovered!':(last.win?'Battle won!':'Friendly battle finished!'))+'</strong>'+
-      '<p>'+esc(batch?(messages.slice(0,3).join(' · ')+(messages.length>3?' · +'+(messages.length-3)+' more':'')):messages[0])+'</p>'+
-      '<small>LEVEL '+level()+' · '+state().xp+' XP · '+pending().length+' ENCOUNTERS LEFT</small></div>';
-    ctx.toast(batch?count+' encounters completed!':'Encounter completed! ✨');
+    const done=stories.length;
+    const heading=e.mode==='mine'? 'Treasure found!' : (wins===done?'You won!':'Friendly battle finished!');
+    $('encounterBody').innerHTML='<div class="encounter-intro"><h2 id="encounterTitle">'+heading+'</h2>'+
+      '<p>'+(e.mode==='mine'?'Your pickaxe uncovered something sparkling.':'Your hero swings the sword. The little creature bounces away!')+'</p></div>'+
+      modalScene(e.mode,e.enemy,true)+
+      '<div class="encounter-loot"><strong>'+(e.mode==='mine'?'💎 '+mined+' stone'+(mined===1?'':'s')+' collected':wins+' of '+done+' battles won')+'</strong>'+
+      '<p>'+esc(stories.slice(0,3).join(' · ')+(stories.length>3?' · +'+(stories.length-3)+' more':''))+'</p>'+
+      '<small>+ '+gainedXP+' XP · LEVEL '+level()+' · '+pending().length+' ENCOUNTERS LEFT</small></div>'+
+      '<button type="button" class="encounter-action encounter-next" data-encounter-step="next">NEXT →</button>';
   }
+  $('encounterBody').addEventListener('click',(event)=>{
+    const button=event.target.closest('[data-encounter-step]');if(!button)return;
+    if(button.dataset.encounterStep==='act')resolveEncounter();
+    if(button.dataset.encounterStep==='next')encounterDialog.close();
+  });
+  $('encounterClose').addEventListener('click',()=>encounterDialog.close());
+  encounterDialog.addEventListener('close',()=>{activeEncounter=null;});
   function render(){
     const j=state(),available=pending().length,bal=wallet(),lv=level(),stones=stoneCount();
     const xpIn=j.xp%12;
@@ -120,8 +171,8 @@ window.createBattleJourney = function(ctx) {
       (!gear?'<button class="wide-gold" type="button" data-action="starter" '+(bal<3?'disabled':'')+'>⚔ Get sword + pickaxe · 3 BP</button><p class="mini-muted">A one-time starter kit: both tools for 3 BP. Your encounters wait safely until you have equipment.</p>':
       '<div class="encounter-choices"><button data-action="battle" '+(!available?'disabled':'')+' type="button">⚔ QUICK BATTLE</button><button data-action="mine" '+(!available?'disabled':'')+' type="button">⛏ QUICK MINE</button></div>'+
       (available>1?'<div class="batch-choices"><button data-action="battle-all" type="button">Battle all ('+available+')</button><button data-action="mine-all" type="button">Mine all ('+available+')</button></div>':'')+
-      '<p class="mini-muted">One tap = one encounter (a few seconds). You can save them and use many together.</p>')+
-      (!available?'<p class="encounter-help">✦ All done for now. Earn all 3 regular Battle Points on a morning to receive another encounter.</p>':'<p class="encounter-help">✦ '+available+' encounter'+(available===1?'':'s')+' ready. Pick a friendly battle or dig for gems!</p>');
+      '<p class="mini-muted">Choose a battle or mine, take one action in the pop-up, then press Next. Save encounters for later or play them as a batch.</p>')+
+      (!available?'<p class="encounter-help">✦ All done for now. Earn 3 regular BP and press End the Morning to unlock the next encounter.</p>':'<p class="encounter-help">✦ '+available+' encounter'+(available===1?'':'s')+' ready. Pick a friendly battle or dig for gems!</p>');
     $('gearArea').innerHTML=
       '<div class="stone-bar"><strong>💎 STONES</strong><span>'+gems.map(g=>labels[g]+': '+j.gems[g]).join('  ·  ')+'</span></div>'+
       '<div class="upgrade-list">'+[
@@ -149,7 +200,7 @@ window.createBattleJourney = function(ctx) {
         ctx.save();ctx.refresh();ctx.toast('Reward redeemed! Ask an adult to deliver it. 🎁');
       }
     }else if(action==='battle'||action==='mine'||action==='battle-all'||action==='mine-all'){
-      runEncounter(action.startsWith('battle')?'battle':'mine',action.endsWith('-all'));
+      openEncounter(action.startsWith('battle')?'battle':'mine',action.endsWith('-all'));
     }else if(action==='upgrade'){
       if(!state().starter||!['sword','pickaxe','armour'].includes(id)||state()[id]>=5)return;
       if(level()<state()[id]+1){ctx.toast('Level up to unlock the next upgrade!');return;}

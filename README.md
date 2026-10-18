@@ -1,4 +1,4 @@
-# BattlePoints — Morning Quest (v2)
+# BattlePoints — Morning Quest (v2.1)
 
 A phone-first, installable, offline-friendly checklist for Ethan, with an original pixel-art explorer and a very short Battle Journey.
 
@@ -12,9 +12,11 @@ The **bonus shortcuts** under the quests are:
 - **Piano +1 BP**: tap APPROVE, enter the adult PIN, and it immediately becomes claimable. Only one piano bonus can be offered per day.
 - **Extra bonus**: tap ADD, enter the adult PIN, write a reason, choose 1 or 2 BP, and offer it. Ethan taps CLAIM to collect an offered bonus.
 
-**Risk BP** is a no-PIN, two-step adult discretion measure on each quest. Press RISK BP to show an "at risk" warning, then optionally press **Forfeit this quest's 1 BP**, with a confirmation prompt. Arming risk alone **never removes points**. Clearing risk restores eligibility. A forfeited quest does not count toward the 3 BP required for an encounter, even if all steps are ticked. This is intentionally a manual decision, never a random or automatic penalty.
+**Risk BP** is a no-PIN, two-step adult discretion measure on each quest. Press RISK BP to show an "at risk" warning, then optionally press **Forfeit this quest's 1 BP**, with a confirmation prompt. Arming and clearing a risk require **no confirmation**. Arming risk alone **never removes points**. Clearing risk restores eligibility. A forfeited quest does not count toward the 3 BP required for an encounter, even if all steps are ticked. This is intentionally a manual decision, never a random or automatic penalty.
 
 Vitamin/medication reminders remain optional, unscored checkboxes; medicine must not be incentivised by BP.
+
+**End the Morning:** a permanent, one-tap cutoff at the very bottom of Daily Quests. The app saves `endedAt`, `finalRegularBP` and `finalBonusBP` for the date, turns the daily screen grey, and disables all checklist interactions (tasks, health reminders, risk changes, new bonus offers and bonus claiming). There is intentionally no cheerful completion animation. The next local calendar day has a fresh checklist. The adult history shows the closed time; previous records are retained.
 
 ## Battle Journey (adult-PIN unlocked)
 
@@ -22,10 +24,11 @@ The former History tab is now **Battle Journey**. Stats, daily records, backups,
 
 The adventure is deliberately short and gentle, with little friendly pixel-art creatures rather than scary enemies.
 
-- Every **day with all 3 regular BP** earns **one battle OR one mining encounter**, redeemable later. Two or more queued encounters can be resolved in a batch. Bonus BP cannot create encounters.
+- Every **day with all 3 regular BP**, after tapping **End the Morning**, earns **one battle OR one mining encounter**, redeemable later. Old historical days with 3/3 points remain eligible even if they predate the closure feature. Two or more queued encounters can be resolved in a batch. Bonus BP cannot create encounters.
+- Opening or cancelling an encounter pop-up does **not** consume the encounter. The one action button resolves and records it once. Batches follow the same single-action/result/Next flow.
 - **Starter sword + pickaxe** are a **one-time bundle for 3 BP**, equipped immediately. Encounter tokens remain pending until the starter kit is purchased.
-- **Friendly battle** takes one tap; enemy difficulty increases every few wins. Winning earns 4 XP, and a friendly loss earns 2 XP.
-- **Mining** takes one tap; it awards 2 XP and at least one random quartz, ruby, sapphire or emerald stone. An upgraded pickaxe can sometimes find two stones.
+- **Friendly battle** opens a brief pop-up with a larger creature and explorer sprite. Tap **Attack**, see the result, then **Next** to return to Journey. Enemy difficulty increases every few wins. Winning earns 4 XP, and a friendly loss earns 2 XP.
+- **Mining** opens a pop-up with a larger mineral-rock sprite. Tap **Dig**, see the gemstone result, then **Next** to return to Journey. It awards 2 XP and at least one random quartz, ruby, sapphire or emerald stone. An upgraded pickaxe can sometimes find two stones.
 - **12 XP per level**. Stones improve sword power, mining equipment, armour or unlock skins. Higher equipment tiers require higher hero levels (and more stones).
 - **Real-life rewards**: 5 BP for a Tokyo SHIFT car coupon of choice, or 15 BP for 10 extra minutes of technology time. These redemptions debit the wallet once and record a pending adult delivery confirmation.
 
