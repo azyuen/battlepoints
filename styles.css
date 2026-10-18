@@ -154,3 +154,52 @@ body.dev-active .hero-card{border-color:#a77b51}
 
 /* Keep the device toggle below the existing sticky timer header. */
 .dev-quick-toggle{top:105px;z-index:21}
+
+/* v2.3 — visible kits, upgradeable pixel gear and tactical encounters */
+.journey-kit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:13px}
+.journey-kit-card{border:1px solid #62829e;border-radius:12px;background:linear-gradient(155deg,#2c4b6d,#1b314b);display:flex;flex-direction:column;align-items:center;padding:8px 6px 10px;min-width:0;aspect-ratio:1/1}
+.journey-kit-card:nth-child(2){border-color:#5c9a86;background:linear-gradient(150deg,#2c554c,#1b3544)}
+.journey-kit-art{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+.journey-kit-art .journey-avatar{height:min(33vw,146px);max-height:147px;width:auto;filter:drop-shadow(0 6px 1px #081b30b0);animation:kitIdle 3.4s ease-in-out infinite;overflow:visible}
+.journey-kit-card:nth-child(2) .journey-avatar{animation-delay:-1.7s}
+.journey-kit-card>strong{font:900 11px ui-monospace,monospace;letter-spacing:-.2px;color:#ffe6ae;text-align:center;white-space:nowrap;margin-top:3px}
+.journey-kit-card>small{font-size:9px;line-height:1.4;color:#ecf5fb;margin-top:6px;text-align:center}
+.journey-kit-card>span{font:800 9px ui-monospace,monospace;color:#afcbe0;margin-top:6px;text-align:center;line-height:1.4}
+.journey-shop-title{font:900 12px ui-monospace,monospace;color:#f5d893;letter-spacing:.5px;border-top:1px solid #ffffff2a;padding:15px 0 8px;margin-top:13px}
+.journey-store-group{margin:6px 0 13px;border:1px solid #405a75;background:#21384f;border-radius:10px;padding:8px 10px}
+.journey-store-group>strong{display:block;color:#b9dfeb;font:900 11px ui-monospace,monospace;letter-spacing:.4px;padding-bottom:3px}
+.gear-swatch{display:inline-block;width:12px;height:12px;vertical-align:middle;border:1px solid #ffffff66;border-radius:2px;box-shadow:1px 1px 0 #1b2435;flex:0 0 auto}
+.journey-store-group .upgrade-row{padding:10px 0}
+.skin-options button{display:inline-flex;align-items:center;gap:5px}
+.encounter-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}
+.encounter-stat-grid>div{background:#263c56;border:1px solid #54708c;border-radius:8px;padding:10px 8px;min-width:0}
+.encounter-stat-grid strong{display:block;color:#f2e1b7;font:800 11px ui-monospace,monospace;line-height:1.3}
+.encounter-stat-grid span{display:block;color:#c7dce7;font:800 10px ui-monospace,monospace;margin-top:6px}
+.encounter-chance{padding:12px;background:#20344b;border-radius:10px;border:1px solid #56778d;margin-top:9px;display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center}
+.encounter-chance>span{font:900 10px ui-monospace,monospace;color:#c9e2e9;letter-spacing:.25px}
+.encounter-chance>strong{font:900 25px ui-monospace,monospace;color:#f7d58a}
+.chance-track{grid-column:1 / -1;height:11px;border:1px solid #648193;border-radius:6px;background:#0e1e30;overflow:hidden}
+.chance-track span{display:block;height:100%;background:linear-gradient(90deg,#68abbe,#a8dfc7);border-radius:5px}
+.encounter-chance>small{grid-column:1 / -1;color:#b2c4cf;font-size:10px;line-height:1.4}
+.encounter-action-pair{display:grid;grid-template-columns:1.2fr .8fr;gap:9px;margin-top:10px}
+.encounter-action-pair .encounter-action{margin:0}
+.encounter-flee{background:#374d62;color:#e1eaf4;border:1px solid #72899c;border-radius:9px;padding:12px 4px;font:900 13px ui-monospace,monospace}
+.encounter-arena{min-height:211px}
+.encounter-arena-ready .encounter-target .enemy-svg{animation:creatureIdle 2.1s ease-in-out infinite}
+.encounter-arena-ready .encounter-hero .journey-avatar{animation:kitIdle 2.8s ease-in-out infinite}
+.encounter-arena-ready .encounter-target .mining-svg{animation:rockShimmer 2.9s ease-in-out infinite}
+.encounter-arena-win .encounter-hero .journey-avatar{animation:encounterHeroSwing .8s ease-in-out}
+.encounter-arena-win .encounter-target .enemy-svg{animation:creatureBounce .8s ease-in-out}
+.encounter-arena-win .encounter-target .mining-svg{animation:gemSpark .8s ease-in-out}
+.encounter-arena-miss .encounter-hero .journey-avatar{animation:encounterHeroSwing .7s ease-in-out}
+.encounter-arena-miss .encounter-target .enemy-svg{animation:creatureDodge .65s ease-out}
+.encounter-arena-miss .encounter-target .mining-svg{animation:rockShake .75s ease-out}
+.encounter-action-flash{position:absolute;top:13px;left:50%;transform:translateX(-50%);font-size:42px;color:#fff5b2;z-index:3;pointer-events:none;animation:flashPoof 1s ease-out both}
+@keyframes kitIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes creatureIdle{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+@keyframes rockShimmer{0%,100%{filter:brightness(.94)}50%{filter:brightness(1.3)}}
+@keyframes rockShake{0%,100%{transform:translateX(0)}15%,65%{transform:translateX(-6px)}35%,85%{transform:translateX(7px)}}
+@keyframes creatureDodge{0%{transform:translateX(0)}30%{transform:translate(12px,-13px)}65%{transform:translate(-8px,-4px)}100%{transform:translateX(0)}}
+@keyframes flashPoof{0%{opacity:0;transform:translate(-50%,35px) scale(.3)}45%{opacity:1;transform:translate(-50%,-5px) scale(1.2)}100%{opacity:0;transform:translate(-50%,-30px) scale(1.6)}}
+@media(max-width:370px){.journey-kit-card{padding:7px 4px}.journey-kit-art .journey-avatar{height:125px}.journey-kit-card>strong{font-size:10px}.journey-kit-card>span{font-size:8px}.encounter-stat-grid strong{font-size:10px}.encounter-chance>strong{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.journey-kit-art .journey-avatar,.encounter-arena .journey-avatar,.encounter-arena .enemy-svg,.encounter-arena .mining-svg,.encounter-action-flash{animation:none!important}}

@@ -1,4 +1,4 @@
-# BattlePoints — Morning Quest (v2.2)
+# BattlePoints — Morning Quest (v2.3)
 
 A phone-first, installable, offline-friendly checklist for Ethan, with an original pixel-art explorer and a very short Battle Journey.
 
@@ -20,19 +20,19 @@ Vitamin/medication reminders remain optional, unscored checkboxes; medicine must
 
 ## Battle Journey (adult-PIN unlocked)
 
-The former History tab is now **Battle Journey**. Stats, daily records, backups, bonus management, and delivery confirmations have moved into the adult control room.
+The former History tab is **Battle Journey**. Stats, daily records, backups, bonuses and real-world reward delivery confirmations are in the Adult room.
 
-The adventure is deliberately short and gentle, with little friendly pixel-art creatures rather than scary enemies.
+**Access and banking:** each day closed with **3 regular BP** earns one permanent encounter token for **either** battle or mining. Tokens accumulate over days; there is no requirement to play on the day earned. A child can return for multiple encounters on a day when the adult has unlocked Journey. The LIVE tab requires the adult PIN every time Journey is re-entered after leaving it; active DEV testing skips repeat PIN checks. Prior v2 saves' eligible 3/3 days are preserved.
 
-- Every **day with all 3 regular BP**, after tapping **End the Morning**, earns **one battle OR one mining encounter**, redeemable later. Old historical days with 3/3 points remain eligible even if they predate the closure feature. Two or more queued encounters can be resolved in a batch. Bonus BP cannot create encounters.
-- Opening or cancelling an encounter pop-up does **not** consume the encounter. The one action button resolves and records it once. Batches follow the same single-action/result/Next flow.
-- **Starter sword + pickaxe** are a **one-time bundle for 3 BP**, equipped immediately. Encounter tokens remain pending until the starter kit is purchased.
-- **Friendly battle** opens a brief pop-up with a larger creature and explorer sprite. Tap **Attack**, see the result, then **Next** to return to Journey. Enemy difficulty increases every few wins. Winning earns 4 XP, and a friendly loss earns 2 XP.
-- **Mining** opens a pop-up with a larger mineral-rock sprite. Tap **Dig**, see the gemstone result, then **Next** to return to Journey. It awards 2 XP and at least one random quartz, ruby, sapphire or emerald stone. An upgraded pickaxe can sometimes find two stones.
-- **12 XP per level**. Stones improve sword power, mining equipment, armour or unlock skins. Higher equipment tiers require higher hero levels (and more stones).
-- **Real-life rewards**: 5 BP for a Tokyo SHIFT car coupon of choice, or 15 BP for 10 extra minutes of technology time. These redemptions debit the wallet once and record a pending adult delivery confirmation.
+- **Battle:** preview an original friendly pixel-art creature, its Level, HP, Attack, the hero's Attack and Defence, and a numerical win probability. Choose **Attack** or **Flee**. Flee closes the pop-up without consuming BP *or* the encounter. Attacking spends **one encounter but zero BP**, with either 4 XP on a win or 1 XP on a miss.
+- **Mining:** preview a pixel-art rock, its Hardness, the hero's Mining Power and a chance of finding a gem. Choose **Dig** or **Leave**. Leaving keeps the encounter; digging consumes one encounter, costing **no BP**. A find awards a random quartz/ruby/sapphire/emerald stone plus 2 XP; an ordinary-rock outcome awards **no gem** and 1 XP. Better pickaxes increase the chance.
+- **Batch play:** use Battle several or Mine several with banked encounters. Each individual opponent still gets its own preview and choice, result and Next button. Closing/fleeing mid-batch preserves untouched encounters.
+- **Two square character kits:** Battle Kit and Mining Kit show the actual equipped skin, armour, weapon or pickaxe on the character, with live stats. The same appearance is used in the animated pop-up.
+- **Equipment shop:** a one-time 3 BP starter bundle; three additional sword tiers, three pickaxes and three armour sets at **4/8/12 BP**, with progressive level requirements; cosmetic skins at **2–5 BP**. Purchased items can be re-equipped for free, and each has its own pixel-art colors/shapes. Older earned equipment and skins stay in the save.
+- **Gem techniques:** 12 XP per hero level; stones can still upgrade Attack, Mining and Defence skill tiers as before. Purchased gear bonuses also contribute to actual odds.
+- **Real-life rewards:** Tokyo SHIFT car coupon for 5 BP, or ten extra minutes of tech for 15 BP, logged for adult delivery confirmation.
 
-**BP accounting:** The wallet shows earned BP less prior purchases and real-life redemptions; BP spent on equipment cannot also purchase real-world rewards. Daily quest scores remain visible after points are spent. If someone retrospectively changes a completed day, available BP can fall to zero, but prior transactions are retained in the audit history. Encounter tokens are derived from eligible full-score dates, and each date can be used only once.
+**Accounting:** encounters are not purchased with BP; they are minted only from eligible 3/3 closed dates, with each date consumed once on an actual Attack/Dig. Flee and modal closure consume neither BP nor encounters. BP is deducted once only for purchases or real-life reward redemptions, without changing daily achievement history.
 
 ## Developer Mode — isolated local profile
 

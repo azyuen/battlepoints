@@ -357,7 +357,7 @@
     renderParentLock();
     if(!dialog.open)dialog.showModal();
   }
-  $('navParent').addEventListener('click',()=>openParentGate('dashboard'));
+  $('navParent').addEventListener('click',()=>{if(activeTab==='journey'&&!devActive)switchTab('quests');openParentGate('dashboard');});
   dialog.addEventListener('close',()=>{adultUnlocked=false;});
   function addBonus(type,reason,amount) {
     const day=currentDay();if(day.endedAt){showToast('Morning has already ended');return false;}
