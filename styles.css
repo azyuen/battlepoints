@@ -157,14 +157,14 @@ body.dev-active .hero-card{border-color:#a77b51}
 
 /* v2.3 — visible kits, upgradeable pixel gear and tactical encounters */
 .journey-kit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:13px}
-.journey-kit-card{border:1px solid #62829e;border-radius:12px;background:linear-gradient(155deg,#2c4b6d,#1b314b);display:flex;flex-direction:column;align-items:center;padding:8px 6px 10px;min-width:0;aspect-ratio:1/1}
+.journey-kit-card{border:1px solid #62829e;border-radius:12px;background:linear-gradient(155deg,#2c4b6d,#1b314b);display:flex;flex-direction:column;align-items:center;padding:8px 6px 12px;gap:4px;min-width:0;min-height:0;overflow:hidden}
 .journey-kit-card:nth-child(2){border-color:#5c9a86;background:linear-gradient(150deg,#2c554c,#1b3544)}
-.journey-kit-art{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
-.journey-kit-art .journey-avatar{height:min(33vw,146px);max-height:147px;width:auto;filter:drop-shadow(0 6px 1px #081b30b0);animation:kitIdle 3.4s ease-in-out infinite;overflow:visible}
+.journey-kit-art{flex:none;height:clamp(108px,31vw,150px);min-height:0;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.journey-kit-art .journey-avatar{height:min(29vw,133px);max-height:calc(100% - 8px);max-width:100%;flex-shrink:1;width:auto;filter:drop-shadow(0 4px 1px #081b30b0);animation:kitIdle 3.4s ease-in-out infinite;overflow:hidden}
 .journey-kit-card:nth-child(2) .journey-avatar{animation-delay:-1.7s}
 .journey-kit-card>strong{font:900 11px ui-monospace,monospace;letter-spacing:-.2px;color:#ffe6ae;text-align:center;white-space:nowrap;margin-top:3px}
-.journey-kit-card>small{font-size:9px;line-height:1.4;color:#ecf5fb;margin-top:6px;text-align:center}
-.journey-kit-card>span{font:800 9px ui-monospace,monospace;color:#afcbe0;margin-top:6px;text-align:center;line-height:1.4}
+.journey-kit-card>small{display:block;font-size:10px;line-height:1.35;color:#ecf5fb;margin:2px 0 0;text-align:center;white-space:normal;overflow-wrap:anywhere;min-height:2.7em}
+.journey-kit-card>span{display:block;font:800 9px ui-monospace,monospace;color:#afcbe0;margin:2px 0 0;text-align:center;line-height:1.35;white-space:normal;overflow-wrap:anywhere;min-height:2.7em}
 .journey-shop-title{font:900 12px ui-monospace,monospace;color:#f5d893;letter-spacing:.5px;border-top:1px solid #ffffff2a;padding:15px 0 8px;margin-top:13px}
 .journey-store-group{margin:6px 0 13px;border:1px solid #405a75;background:#21384f;border-radius:10px;padding:8px 10px}
 .journey-store-group>strong{display:block;color:#b9dfeb;font:900 11px ui-monospace,monospace;letter-spacing:.4px;padding-bottom:3px}
@@ -201,5 +201,11 @@ body.dev-active .hero-card{border-color:#a77b51}
 @keyframes rockShake{0%,100%{transform:translateX(0)}15%,65%{transform:translateX(-6px)}35%,85%{transform:translateX(7px)}}
 @keyframes creatureDodge{0%{transform:translateX(0)}30%{transform:translate(12px,-13px)}65%{transform:translate(-8px,-4px)}100%{transform:translateX(0)}}
 @keyframes flashPoof{0%{opacity:0;transform:translate(-50%,35px) scale(.3)}45%{opacity:1;transform:translate(-50%,-5px) scale(1.2)}100%{opacity:0;transform:translate(-50%,-30px) scale(1.6)}}
-@media(max-width:370px){.journey-kit-card{padding:7px 4px}.journey-kit-art .journey-avatar{height:125px}.journey-kit-card>strong{font-size:10px}.journey-kit-card>span{font-size:8px}.encounter-stat-grid strong{font-size:10px}.encounter-chance>strong{font-size:21px}}
+@media(max-width:370px){.journey-kit-card{padding:7px 4px 10px}.journey-kit-art{height:105px}.journey-kit-art .journey-avatar{height:96px}.journey-kit-card>strong{font-size:10px}.journey-kit-card>span{font-size:8px}.encounter-stat-grid strong{font-size:10px}.encounter-chance>strong{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.journey-kit-art .journey-avatar,.encounter-arena .journey-avatar,.encounter-arena .enemy-svg,.encounter-arena .mining-svg,.encounter-action-flash{animation:none!important}}
+
+/* Adult-managed real-life rewards */
+.real-wallet-admin{margin:11px 0 14px;padding:10px;background:#264458;border:1px solid #568399;border-radius:9px;color:#d0edf2;font:800 11px/1.6 ui-monospace,monospace}
+.reward-active-toggle{display:flex!important;align-items:center;gap:9px;margin-top:4px;cursor:pointer}
+.reward-active-toggle input{width:20px!important;height:20px!important;min-height:20px!important;margin:0!important;flex:0 0 20px;accent-color:#f7c965}
+.reward-active-toggle:has(input:focus-visible){outline:2px solid #78cddd;outline-offset:4px;border-radius:6px}

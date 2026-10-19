@@ -11,9 +11,10 @@ window.createBattleJourney = function(ctx) {
     {name:'Bubblekin',color:'#9dd4f5',dark:'#5d9dcc',eyes:'#253958'},
     {name:'Starpetal',color:'#e9bbfc',dark:'#a277c6',eyes:'#514079'}
   ];
-  const rewards=[
-    {id:'tokyoshift',name:'Tokyo SHIFT car coupon',description:'Choose one Tokyo SHIFT car coupon',cost:5,emoji:'🏎️'},
-    {id:'tech',name:'10 extra minutes of tech',description:'10 minutes of bonus technology time',cost:15,emoji:'🎮'}
+  // Reward prices belong to the real-life wallet and can be edited in Adult.
+  const defaultRewards=[
+    {id:'tokyoshift',name:'Tokyo SHIFT car coupon',description:'Choose one Tokyo SHIFT car coupon',cost:15,emoji:'🏎️',active:true},
+    {id:'tech',name:'10 extra minutes of tech',description:'10 minutes of bonus technology time',cost:30,emoji:'🎮',active:true}
   ];
   const equipment={
     sword:[
@@ -128,8 +129,39 @@ window.createBattleJourney = function(ctx) {
     return j;
   }
   function level() {return 1+Math.floor(state().xp/12);}
-  function spent() {return state().spending.reduce((n,s)=>n+(Number(s.cost)||0),0);}
-  function wallet() {return Math.max(0,ctx.totalBP()-spent());}
+  function categorySpent(realLife){
+    return state().spending.reduce((sum,entry)=>{
+      const isReward=entry.kind==='reward';
+      return sum+(isReward===realLife?Math.max(0,Number(entry.cost)||0):0);
+    },0);
+  }
+  // Legacy spending[] receipts remain compatible: reward entries debit REAL,
+  // every other purchase type (gear/skin/equipment) debits JOURNEY.
+  function spent(){return categorySpent(false);}
+  function rewardSpent(){return categorySpent(true);}
+  function wallet(){return Math.max(0,ctx.totalBP()-spent());}
+  function rewardWallet(){return Math.max(0,ctx.totalBP()-rewardSpent());}
+  function rewardCatalog(){
+    const data=ctx.getData();
+    if(!Array.isArray(data.realRewards)){
+      data.realRewards=defaultRewards.map(item=>({...item}));
+    }
+    return data.realRewards;
+  }
+  function setReward(item){
+    const name=String(item.name||'').trim().slice(0,80);
+    const description=String(item.description||'').trim().slice(0,180);
+    const cost=Number(item.cost);
+    if(!name||!Number.isInteger(cost)||cost<1||cost>10000)return false;
+    const list=rewardCatalog();
+    const existing=item.id&&list.find(reward=>reward.id===item.id);
+    if(existing){Object.assign(existing,{name,description,cost,active:!!item.active});}
+    else{
+      const id='custom-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+      list.push({id,name,description,cost,active:!!item.active,emoji:'🎁'});
+    }
+    ctx.save();ctx.refresh();return true;
+  }
   function stoneCount(){return gems.reduce((n,g)=>n+state().gems[g],0);}
   function pending() {
     return Object.keys(ctx.getData().days).sort().filter(key=>{
@@ -141,9 +173,13 @@ window.createBattleJourney = function(ctx) {
       return ctx.regularBP(d)===3&&!d.encounterUsed&&(ctx.isDev&&ctx.isDev()?!!d.endedAt:(!isToday||!!d.endedAt));
     });
   }
-  function canSpend(cost){if(wallet()<cost){ctx.toast('Not enough BP yet. Keep questing!');return false;}return true;}
-  function buy(cost,kind,label) {
-    if(!canSpend(cost))return false;
+  function canSpend(cost,kind='gear'){
+    const balance=kind==='reward'?rewardWallet():wallet();
+    if(balance<cost){ctx.toast(kind==='reward'?'Not enough real-life BP yet.':'Not enough Journey BP yet.');return false;}
+    return true;
+  }
+  function buy(cost,kind,label){
+    if(!canSpend(cost,kind))return false;
     state().spending.push({id:'s'+Date.now()+'-'+Math.random().toString(36).slice(2,7),kind,label,cost,at:new Date().toISOString()});
     return true;
   }
@@ -270,11 +306,11 @@ window.createBattleJourney = function(ctx) {
   function render(){
     const j=state(),available=pending().length,bal=wallet(),lv=level(),stones=stoneCount();
     const xpIn=j.xp%12;
-    $('journeySummary').innerHTML='<div class="journey-stat"><span>YOUR BP</span><strong>'+bal+'</strong><small>'+spent()+' spent · '+ctx.totalBP()+' earned</small></div>'+
-      '<div class="journey-stat"><span>HERO LEVEL</span><strong>'+lv+'</strong><small>'+xpIn+' / 12 XP to next</small></div>'+
-      '<div class="journey-stat"><span>ENCOUNTERS</span><strong>'+available+'</strong><small>3/3 BP day = +1</small></div>';
-    $('rewardShop').innerHTML=rewards.map(r=>'<div class="shop-row"><div class="shop-emoji">'+r.emoji+'</div><div class="shop-detail"><strong>'+r.name+'</strong><small>'+r.description+'</small></div><button type="button" data-action="reward" data-id="'+r.id+'" '+(bal<r.cost?'disabled':'')+'>'+r.cost+' BP</button></div>').join('')+
-      '<p class="mini-muted">An adult confirms each real-world redemption. Redeemed points are deducted; daily achievements and history remain.</p>';
+    $('journeySummary').innerHTML='<div class="journey-stat"><span>JOURNEY BP</span><strong>'+bal+'</strong><small>'+spent()+' used on character</small></div>'+
+      '<div class="journey-stat"><span>REAL-LIFE BP</span><strong>'+rewardWallet()+'</strong><small>'+rewardSpent()+' claimed in real life</small></div>'+
+      '<div class="journey-stat"><span>ENCOUNTERS</span><strong>'+available+'</strong><small>HERO LV '+lv+' · '+xpIn+'/12 XP</small></div>';
+    $('rewardShop').innerHTML=rewardCatalog().filter(r=>r.active!==false).map(r=>'<div class="shop-row"><div class="shop-emoji">'+(r.emoji||'🎁')+'</div><div class="shop-detail"><strong>'+esc(r.name)+'</strong><small>'+esc(r.description)+'</small></div><button type="button" data-action="reward" data-id="'+esc(r.id)+'" '+(rewardWallet()<r.cost?'disabled':'')+'>'+r.cost+' BP</button></div>').join('')+
+      '<p class="mini-muted">Real-life BP is separate from Journey BP. Character purchases never reduce your real-life reward balance. Adults edit prices and rewards in the Adult tab.</p>';
     const hasKit=!!j.starter;
     $('journeyControls').innerHTML=
       '<div class="pixel-party"><span aria-hidden="true">🛡️</span><div><strong>Explorer · Level '+lv+'</strong><small>⚔ ATK '+playerStats().attack+' · 🛡 DEF '+playerStats().defence+' · ⛏ MINING '+playerStats().mining+'</small></div><span class="skin-chip">'+esc(j.skin.toUpperCase())+'</span></div>'+
@@ -317,8 +353,8 @@ window.createBattleJourney = function(ctx) {
       if(state().starter)return;
       if(buy(3,'gear','Starter sword and pickaxe')){state().starter=true;state().sword=1;state().pickaxe=1;ctx.save();ctx.refresh();ctx.toast('Starter gear equipped! ⚔ ⛏');}
     }else if(action==='reward'){
-      const reward=rewards.find(r=>r.id===id);if(!reward||!canSpend(reward.cost))return;
-      if(!confirm('An adult must approve: redeem '+reward.cost+' BP for '+reward.name+'? This will spend the points.'))return;
+      const reward=rewardCatalog().find(r=>r.id===id&&r.active!==false);if(!reward||!canSpend(reward.cost,'reward'))return;
+      if(!confirm('Adult approval: claim '+reward.name+' for '+reward.cost+' REAL-LIFE BP? Journey BP will not change.'))return;
       if(buy(reward.cost,'reward',reward.name)){
         state().spending[state().spending.length-1].status='awaiting-fulfilment';
         ctx.save();ctx.refresh();ctx.toast('Reward redeemed! Ask an adult to deliver it. 🎁');
@@ -355,5 +391,5 @@ window.createBattleJourney = function(ctx) {
 
     }
   });
-  return {render,level,wallet,pending,spent};
+  return {render,level,wallet,rewardWallet,pending,spent,rewardSpent,rewardCatalog,setReward};
 };

@@ -1,4 +1,4 @@
-# BattlePoints — Morning Quest (v2.3)
+# BattlePoints — Morning Quest (v2.4)
 
 A phone-first, installable, offline-friendly checklist for Ethan, with an original pixel-art explorer and a very short Battle Journey.
 
@@ -27,12 +27,16 @@ The former History tab is **Battle Journey**. Stats, daily records, backups, bon
 - **Battle:** preview an original friendly pixel-art creature, its Level, HP, Attack, the hero's Attack and Defence, and a numerical win probability. Choose **Attack** or **Flee**. Flee closes the pop-up without consuming BP *or* the encounter. Attacking spends **one encounter but zero BP**, with either 4 XP on a win or 1 XP on a miss.
 - **Mining:** preview a pixel-art rock, its Hardness, the hero's Mining Power and a chance of finding a gem. Choose **Dig** or **Leave**. Leaving keeps the encounter; digging consumes one encounter, costing **no BP**. A find awards a random quartz/ruby/sapphire/emerald stone plus 2 XP; an ordinary-rock outcome awards **no gem** and 1 XP. Better pickaxes increase the chance.
 - **Batch play:** use Battle several or Mine several with banked encounters. Each individual opponent still gets its own preview and choice, result and Next button. Closing/fleeing mid-batch preserves untouched encounters.
-- **Two square character kits:** Battle Kit and Mining Kit show the actual equipped skin, armour, weapon or pickaxe on the character, with live stats. The same appearance is used in the animated pop-up.
+- **Two character kits:** Battle Kit and Mining Kit show the actual equipped skin, armour, weapon or pickaxe on the character, with live stats. Each card now reserves a separate, clipped sprite area above the captions so no character can overlap the title or equipment details, even on narrower phones. The same gear appears in the animated pop-up.
 - **Equipment shop:** a one-time 3 BP starter bundle; three additional sword tiers, three pickaxes and three armour sets at **4/8/12 BP**, with progressive level requirements; cosmetic skins at **2–5 BP**. Purchased items can be re-equipped for free, and each has its own pixel-art colors/shapes. Older earned equipment and skins stay in the save.
 - **Gem techniques:** 12 XP per hero level; stones can still upgrade Attack, Mining and Defence skill tiers as before. Purchased gear bonuses also contribute to actual odds.
-- **Real-life rewards:** Tokyo SHIFT car coupon for 5 BP, or ten extra minutes of tech for 15 BP, logged for adult delivery confirmation.
+- **Real-life rewards:** default Tokyo SHIFT car coupon costs **15 Real-life BP** and ten extra tech minutes cost **30 Real-life BP**. The Adult panel can edit the reward name, description, integer price (1–10,000 BP), availability, and can add new rewards. Inactive rewards are hidden from the Journey shop. Claims generate receipts awaiting adult fulfilment.
 
-**Accounting:** encounters are not purchased with BP; they are minted only from eligible 3/3 closed dates, with each date consumed once on an actual Attack/Dig. Flee and modal closure consume neither BP nor encounters. BP is deducted once only for purchases or real-life reward redemptions, without changing daily achievement history.
+**Two independent BP wallets:** earning 1 BP contributes **one unit to each wallet**, rather than doubling the earned history. Journey BP purchases (starter kit, swords, pickaxes, armour, skins) debit **only Journey BP**. Real-life claims debit **only Real-life BP**. Spending 5 Journey BP doesn't affect available Real-life BP; redeeming 15 Real-life BP doesn't affect available Journey BP. Each wallet is `totalEarnedBP − spendingInThatCategory`. The total earned and per-category receipts remain preserved.
+
+**Existing save migration:** no destructive conversion is necessary. Previous items in the stored `journey.spending[]` array with `kind: "reward"` are treated as Real-life BP spending. Every other previous receipt type is Journey BP spending. Receipt prices already paid are not recalculated when the adult edits catalog prices. Existing daily history, PIN, level, equipment and gems remain untouched. Reward-catalog settings are held **within the active LIVE or DEV profile** (not a shared settings object), maintaining Dev isolation.
+
+**Encounter accounting:** encounters are not purchased with BP. They are minted only from eligible 3/3 closed dates, each date consumed once on Attack/Dig. Flee and modal closure consume neither BP nor encounters.
 
 ## Developer Mode — isolated local profile
 

@@ -56,7 +56,7 @@
     document.body.classList.toggle('dev-active',devActive);
     if(!devActive)return;
     $('devDateLabel').textContent=currentDate;
-    $('devWallet').textContent=(journey?journey.wallet():totalBP())+' BP READY';
+    $('devWallet').textContent=journey?journey.wallet()+' J · '+journey.rewardWallet()+' REAL':totalBP()+' BP READY';
   }
   function setDevActive(enabled) {
     if(enabled&&!devUnlocked)return;
@@ -415,9 +415,47 @@
       '<section class="dev-parent-section"><h3>🧪 Developer profile</h3><p>One-time PIN unlock for this device. Separate test history, BP and Journey. LIVE progress is never copied into TEST.</p><button id="devAdultToggle" class="primary-wide" type="button">'+(devUnlocked?(devActive?'EXIT DEV PROFILE':'ENTER DEV PROFILE'):'UNLOCK DEV ON THIS DEVICE')+'</button>'+(devUnlocked?'<button id="devLockDevice" class="secondary-wide" type="button">RELOCK DEV ACCESS</button>':'')+'</section>'+
       '<div class="parent-section"><h3>Adult access</h3><p class="mini-muted">4–8 digit PIN. Resetting the PIN requires the current PIN; data never leaves this browser automatically.</p><button id="changePin" type="button" class="secondary-wide">CHANGE PIN</button><div id="pinChangeArea"></div></div>'+
       '<div class="parent-section"><h3>Daily history & statistics</h3><p class="mini-muted">Daily statistics now live in the adult control room.</p><div class="stats-grid" id="statsHighlights"></div><div class="stats-panel"><div class="section-top"><h2>Last 7 mornings</h2><span class="subtle-label">REGULAR BP</span></div><div class="chart" id="weekChart"></div></div><div class="stats-panel"><h2>Daily records</h2><div id="historyList" class="history-list"></div></div></div>'+
+      '<div class="parent-section"><h3>🎁 Edit real-life rewards</h3><p class="mini-muted">Edit prices, hide rewards or add your own. These use REAL-LIFE BP only; Journey equipment has a separate balance.</p>'+
+      '<div id="realWalletAdmin" class="real-wallet-admin"></div>'+
+      '<form id="rewardEditorForm" class="form-stack">'+
+      '<label>Reward<select id="rewardEditSelect"></select></label>'+
+      '<label>Name<input id="rewardEditName" required maxlength="80" placeholder="Reward name"></label>'+
+      '<label>Description<textarea id="rewardEditDescription" maxlength="180" rows="2" placeholder="What does this reward include?"></textarea></label>'+
+      '<label>Cost in real-life BP<input id="rewardEditCost" required type="number" inputmode="numeric" min="1" max="10000" step="1"></label>'+
+      '<label class="reward-active-toggle"><input id="rewardEditActive" type="checkbox" checked> Available to redeem</label>'+
+      '<div id="rewardEditError" class="form-error" role="alert"></div>'+
+      '<button class="primary-wide" type="submit">SAVE REWARD</button></form></div>'+
       '<div class="parent-section"><h3>Real-world rewards awaiting delivery</h3><div id="claimedRewardsAdmin"></div></div>';
     renderStats();
     renderRewardRequests();
+    const rewardList=journey.rewardCatalog();
+    $('realWalletAdmin').textContent='Earned '+totalBP()+' BP · Journey available '+journey.wallet()+' · Real-life available '+journey.rewardWallet();
+    $('rewardEditSelect').innerHTML=rewardList.map(item=>'<option value="'+esc(item.id)+'">'+esc(item.name)+'</option>').join('')+
+      '<option value="__new__">＋ Add another reward</option>';
+    const populateReward=()=>{
+      const selectId=$('rewardEditSelect').value;
+      const item=rewardList.find(r=>r.id===selectId);
+      $('rewardEditName').value=item?item.name:'';
+      $('rewardEditDescription').value=item?item.description:'';
+      $('rewardEditCost').value=item?String(item.cost):'30';
+      $('rewardEditActive').checked=item?item.active!==false:true;
+    };
+    $('rewardEditSelect').addEventListener('change',populateReward);
+    populateReward();
+    $('rewardEditorForm').addEventListener('submit',e=>{
+      e.preventDefault();
+      const choice=$('rewardEditSelect').value;
+      const payload={
+        id:choice==='__new__'?null:choice,
+        name:$('rewardEditName').value,
+        description:$('rewardEditDescription').value,
+        cost:Number($('rewardEditCost').value),
+        active:$('rewardEditActive').checked
+      };
+      if(!journey.setReward(payload)){$('rewardEditError').textContent='Enter a name and a whole-number BP cost between 1 and 10000.';return;}
+      renderParentDashboard();
+      showToast('Real-life reward saved');
+    });
     $('devAdultToggle').addEventListener('click',()=>{
       if(!devUnlocked){devUnlocked=true;localStorage.setItem(DEV_UNLOCK_KEY,'1');}
       setDevActive(!devActive);
