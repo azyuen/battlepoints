@@ -6,22 +6,40 @@
   const DEV_UNLOCK_KEY = 'battlepoints-dev-device-unlocked-v1';
   const DEV_ACTIVE_KEY = 'battlepoints-dev-active-v1';
   const DEV_DATE_KEY = 'battlepoints-dev-current-date-v1';
+  // Physical 10-row checklist, in photographed wording and exact 4 / 3 / 3 order.
+  // Row 9 is an adult check about whether medicine is needed, not a reason to take it.
   const quests = [
-    {id:'morning', icon:'🛏️', title:'Morning Routine', subtitle:'Bedroom and getting dressed', tasks:[
-      ['bed','Make my bed'], ['purifier','Turn off the purifier'],
-      ['face','Wash my face'], ['sunscreen','Put on sunscreen'],
-      ['uniform','Get dressed in uniform'], ['clothes','Put away bed clothes']
+    {id:'morning',icon:'🛏️',title:'Bedroom & Kitchen',subtitle:'Rows 1–4 · 1 BP',tasks:[
+      ['row_bed','MAKE BED\nTURN OFF PURIFIER'],
+      ['row_face','WASH FACE, SUNSCREEN\nUNIFORM, BED CLOTHES'],
+      ['row_egg','MAKE EGG\nMAKE MILK'],
+      ['row_kitchen','IS KITCHEN COMPLETE?']
     ]},
-    {id:'kitchen', icon:'🍳', title:'Kitchen & Bathroom', subtitle:'Breakfast and getting clean', tasks:[
-      ['egg','Make my egg'], ['milk','Make my milk'], ['kitchen_done','Kitchen complete'],
-      ['teeth_nose','Brush teeth and clean nose'], ['toilet_hands','Toilet and wash hands'],
-      ['bathroom_done','Bathroom complete']
+    {id:'kitchen',icon:'🪥',title:'Bathroom',subtitle:'Rows 5–7 · 1 BP',tasks:[
+      ['row_teeth','TEETH, NOSE'],
+      ['row_toilet','TOILET, HANDS'],
+      ['row_bathroom','IS BATHROOM COMPLETE?']
     ]},
-    {id:'school', icon:'🎒', title:'Ready for School', subtitle:'Pack everything and head out', tasks:[
-      ['lunchbox','Put lunchbox in bag'], ['water','Fill water bottle'],
-      ['zip','Zip school bag'], ['bag_check','Check bag checklist']
+    {id:'school',icon:'🎒',title:'Ready for School',subtitle:'Rows 8–10 · 1 BP',tasks:[
+      ['row_bag','LUNCHBOX, WATER, ZIP\nBAG CHECKLIST'],
+      ['row_vit','VIT, ANTIHISTAMINES'],
+      ['row_piano','PIANO']
     ]}
   ];
+  const legacyTaskIds={
+    row_bed:['bed','purifier'],row_face:['face','sunscreen','uniform','clothes'],
+    row_egg:['egg','milk'],row_kitchen:['kitchen_done'],
+    row_teeth:['teeth_nose'],row_toilet:['toilet_hands'],
+    row_bathroom:['bathroom_done'],row_bag:['lunchbox','water','zip','bag_check'],
+    row_vit:[],row_piano:[]
+  };
+  // Historic, pre-photo days still use their original task and BP accounting.
+  const legacyQuests=[
+    {id:'morning',tasks:['bed','purifier','face','sunscreen','uniform','clothes']},
+    {id:'kitchen',tasks:['egg','milk','kitchen_done','teeth_nose','toilet_hands','bathroom_done']},
+    {id:'school',tasks:['lunchbox','water','zip','bag_check']}
+  ];
+  const legacyTaskCount=legacyQuests.reduce((n,q)=>n+q.tasks.length,0);
   const taskCount = quests.reduce((n,q) => n + q.tasks.length,0);
   const $ = (id) => document.getElementById(id);
   function todayKey(d = new Date()) {return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
@@ -41,7 +59,7 @@
   let data = devActive ? devData : liveData;
   const savedDevDate = localStorage.getItem(DEV_DATE_KEY);
   let currentDate = devActive && /^\d{4}-\d{2}-\d{2}$/.test(savedDevDate||'') ? savedDevDate : todayKey();
-  let expandedQuest = 'morning';
+  let expandedQuests = new Set(['morning','kitchen','school']);
   let activeTab = 'quests';
   let adultUnlocked = false;
   let pendingParentAction = 'dashboard';
@@ -73,7 +91,7 @@
       currentDate=todayKey();
       adultUnlocked=false;
     }
-    expandedQuest='morning';
+    expandedQuests = new Set(['morning','kitchen','school']);
     save();
     switchTab('quests');
     render();
@@ -85,7 +103,7 @@
     d.setDate(d.getDate()+amount);
     currentDate=todayKey(d);
     localStorage.setItem(DEV_DATE_KEY,currentDate);
-    expandedQuest='morning';
+    expandedQuests = new Set(['morning','kitchen','school']);
     dayFor(currentDate);save();render();
   }
   function finishDevMorning() {
@@ -159,10 +177,17 @@
     save();render();showToast('Test profile reset');
   });
   function dayFor(key) {
-    if (!data.days[key]) data.days[key] = {tasks:{},bonuses:[],startedAt:null};
+    if (!data.days[key]) data.days[key] = {tasks:{},bonuses:[],startedAt:null,checklistVersion:2};
     const day = data.days[key];
     if (!day.tasks || typeof day.tasks !== 'object') day.tasks = {};
     if (!Array.isArray(day.bonuses)) day.bonuses = [];
+    // Only migrate the displayed, still-open date; keep historical days and final BP untouched.
+    if(key===currentDate && !day.endedAt && day.checklistVersion!==2){
+      for(const [row,oldIds] of Object.entries(legacyTaskIds)){
+        if(!day.tasks[row])day.tasks[row]={done:oldIds.length>0&&oldIds.every(id=>!!day.tasks[id]?.done),at:null};
+      }
+      day.checklistVersion=2;
+    }
     return day;
   }
   function save() {
@@ -173,12 +198,25 @@
   function ensureDate() {
     if(devActive)return;
     const key = todayKey();
-    if (key !== currentDate) {currentDate = key; expandedQuest = 'morning';dayFor(key);save();render();}
+    if (key !== currentDate) {currentDate = key; expandedQuests = new Set(['morning','kitchen','school']);dayFor(key);save();render();}
   }
   function taskDone(day,id) {return Boolean(day.tasks[id] && day.tasks[id].done);}
-  function completedSteps(day) {return quests.reduce((n,q)=>n+q.tasks.filter(t=>taskDone(day,t[0])).length,0);}
-  function questDone(day,q) {return q.tasks.every(t=>taskDone(day,t[0]));}
-  function regularBP(day) {if(day.endedAt&&Number.isInteger(day.finalRegularBP))return day.finalRegularBP;return quests.filter(q=>questDone(day,q)&&!(day.risks&&day.risks[q.id]&&day.risks[q.id].forfeited)).length;}
+  function rowDone(day,id){
+    if(day.checklistVersion===2)return taskDone(day,id);
+    const oldIds=legacyTaskIds[id]||[];
+    if(id==='row_piano')return !!day.bonuses?.some(b=>b.type==='piano'&&b.claimedAt);
+    return oldIds.length>0&&oldIds.every(oldId=>taskDone(day,oldId));
+  }
+  function completedSteps(day){
+    if(day.checklistVersion!==2)return legacyQuests.reduce((n,q)=>n+q.tasks.filter(id=>taskDone(day,id)).length,0);
+    return quests.reduce((n,q)=>n+q.tasks.filter(t=>rowDone(day,t[0])).length,0);
+  }
+  function questDone(day,q){return q.tasks.every(t=>rowDone(day,t[0]));}
+  function regularBP(day){
+    if(day.endedAt&&Number.isInteger(day.finalRegularBP))return day.finalRegularBP;
+    if(day.checklistVersion!==2)return legacyQuests.filter(q=>q.tasks.every(id=>taskDone(day,id))&&!(day.risks&&day.risks[q.id]?.forfeited)).length;
+    return quests.filter(q=>questDone(day,q)&&!(day.risks&&day.risks[q.id]?.forfeited)).length;
+  }
   function claimedBP(day) {if(day.endedAt&&Number.isInteger(day.finalBonusBP))return day.finalBonusBP;return day.bonuses.reduce((n,b)=>n+(b.claimedAt ? Number(b.amount)||0 : 0),0);}
   function allBP(day) {return regularBP(day)+claimedBP(day)+(devActive?Math.max(0,Number(day.devBP)||0):0);}
   function totalBP() {return Object.values(data.days).reduce((n,d)=>n+allBP(d),0);}
@@ -209,36 +247,33 @@
     const day=currentDay(),locked=Boolean(day.endedAt);
     $('questList').innerHTML=quests.map(q=>{
       const complete=questDone(day,q);
-      const count=q.tasks.filter(t=>taskDone(day,t[0])).length;
-      const open=expandedQuest===q.id;
+      const count=q.tasks.filter(t=>rowDone(day,t[0])).length;
+      const open=expandedQuests.has(q.id);
       const risk=(day.risks&&day.risks[q.id])||{};
-      const rows=q.tasks.map(([id,label])=>'<label class="task-row"><input type="checkbox" data-task="'+id+'" '+(locked?'disabled ':'')+(taskDone(day,id)?'checked':'')+'><span class="tickbox" aria-hidden="true">✓</span><span class="task-label">'+esc(label)+'</span></label>').join('');
+      const rows=q.tasks.map(([id,label])=>'<label class="task-row"><input type="checkbox" data-task="'+id+'" '+(locked?'disabled ':'')+(rowDone(day,id)?'checked':'')+'><span class="tickbox" aria-hidden="true">✓</span><span class="task-label">'+esc(label)+'</span></label>').join('');
       const riskTools=locked?(risk.forfeited||risk.armed?'<div class="risk-closed">'+(risk.forfeited?'⚠ BP forfeited':'⚠ Risk noted')+'</div>':''):'<div class="risk-row '+(risk.forfeited?'risk-forfeited':risk.armed?'risk-armed':'')+'"><div><strong>⚠ Risk BP</strong><small>'+(risk.forfeited?'BP forfeited for this quest.':risk.armed?'This point is at risk. An adult can forfeit it below.':'Adult can put this point at risk; no PIN required.')+'</small></div><button type="button" data-risk="'+(risk.armed?'clear':'arm')+'" data-id="'+q.id+'">'+(risk.armed?'CLEAR RISK':'⚠ RISK BP')+'</button></div>'+(risk.armed&&!risk.forfeited?'<button class="risk-forfeit-btn" type="button" data-risk="forfeit" data-id="'+q.id+'">Forfeit this quest’s 1 BP</button>':'');
-      return '<article class="quest-card '+(complete?'finished':'')+'"><button class="quest-toggle" type="button" data-quest="'+q.id+'" '+(locked?'disabled ':'')+'aria-expanded="'+open+'" aria-controls="panel-'+q.id+'"><span class="quest-emoji" aria-hidden="true">'+q.icon+'</span><span><span class="quest-title">'+q.title+'</span><span class="quest-sub">'+count+' / '+q.tasks.length+' steps done'+(risk.armed?' · ⚠ AT RISK':'')+'</span></span><span class="quest-side"><span class="bp-label">'+(risk.forfeited?'0 BP':complete?'✓ 1 BP':'+1 BP')+'</span><span class="quest-arrow" aria-hidden="true">'+(open?'⌃':'⌄')+'</span></span></button>'+(open?'<div class="quest-body" id="panel-'+q.id+'">'+rows+riskTools+(complete?'<p class="quest-win">'+(risk.forfeited?'⚠ LIST COMPLETE · BP FORFEITED':'★ QUEST COMPLETE · +1 BP ★')+'</p>':'')+'</div>':'')+'</article>';
+      return '<article class="quest-card '+(complete?'finished':'')+'"><button class="quest-toggle" type="button" data-quest="'+q.id+'" '+(locked?'disabled ':'')+'aria-expanded="'+open+'" aria-controls="panel-'+q.id+'"><span class="quest-emoji" aria-hidden="true">'+q.icon+'</span><span><span class="quest-title">'+q.title+'</span><span class="quest-sub">'+count+' / '+q.tasks.length+' rows done'+(risk.armed?' · ⚠ AT RISK':'')+'</span></span><span class="quest-side"><span class="bp-label">'+(risk.forfeited?'0 BP':complete?'✓ 1 BP':'+1 BP')+'</span><span class="quest-arrow" aria-hidden="true">'+(open?'⌃':'⌄')+'</span></span></button>'+(open?'<div class="quest-body" id="panel-'+q.id+'">'+rows+(q.id==='school'?'<p class="medication-row-note">For VIT, ANTIHISTAMINES, check with an adult if anything is needed today; never take medicine to earn points.</p>':'')+riskTools+(complete?'<p class="quest-win">'+(risk.forfeited?'⚠ LIST COMPLETE · BP FORFEITED':'★ QUEST COMPLETE · +1 BP ★')+'</p>':'')+'</div>':'')+'</article>';
     }).join('');
     $('completeCount').textContent=regularBP(day)+' / 3';
     $('dailyPoints').textContent=regularBP(day);
     $('dailyMeter').setAttribute('aria-valuenow',String(regularBP(day)));
     $('meterFill').style.width=(regularBP(day)/3*100)+'%';
-    $('taskSummary').textContent=completedSteps(day)+' / '+taskCount+' steps done';
+    $('taskSummary').textContent=quests.reduce((n,q)=>n+q.tasks.filter(t=>rowDone(day,t[0])).length,0)+' / '+taskCount+' rows done';
     $('heroLevel').textContent='LEVEL '+level()+' EXPLORER · '+(journey?journey.wallet():totalBP())+' BP AVAILABLE';
     $('avatarScene').dataset.gear=String(regularBP(day));
   }
   function renderBonuses() {
     const day=currentDay(),locked=Boolean(day.endedAt),pending=day.bonuses.filter(b=>!b.claimedAt),claimed=day.bonuses.filter(b=>b.claimedAt);
-    const pianoAlready=day.bonuses.some(b=>b.type==='piano');
     $('bonusBadge').textContent=locked?'DAY CLOSED':pending.length+' READY';
-    const rows='<div class="bonus-shortcuts"><div class="bonus-shortcut"><span class="bonus-big-icon">🎹</span><div><strong>Piano +1 BP</strong><small>Adult approves practice</small></div><button type="button" data-bonus="piano" '+(pianoAlready||locked?'disabled':'')+'>'+(pianoAlready?'OFFERED':'🔒 APPROVE')+'</button></div><div class="bonus-shortcut"><span class="bonus-big-icon">🌟</span><div><strong>Extra bonus point</strong><small>Adult adds a reason</small></div><button type="button" data-bonus="other" '+(locked?'disabled':'')+'>🔒 ADD</button></div></div>';
+    const rows='<div class="bonus-shortcuts"><div class="bonus-shortcut"><span class="bonus-big-icon">🌟</span><div><strong>Extra bonus point</strong><small>Adult adds a reason</small></div><button type="button" data-bonus="other" '+(locked?'disabled':'')+'>🔒 ADD</button></div></div>';
     const renderBonus=b=>'<div class="bonus-item"><div><strong>'+esc(b.type==='piano'?'🎹 Piano bonus':'🌟 Special bonus')+' · +'+Number(b.amount)+' BP</strong><p>'+esc(b.reason)+'</p></div>'+(b.claimedAt?'<span class="claimed-mark">✓ CLAIMED</span>':locked?'<span class="claimed-mark">NOT CLAIMED</span>':'<button class="claim-button" type="button" data-claim="'+esc(b.id)+'">CLAIM +'+Number(b.amount)+'</button>')+'</div>';
     $('bonusList').innerHTML=rows+pending.map(renderBonus).join('')+claimed.map(renderBonus).join('');
   }
-  function renderHealth() {const day=currentDay(),health=day.health||{};$('healthVitamin').checked=!!(health.vitamins&&health.vitamins.done);$('healthMedication').checked=!!(health.medication&&health.medication.done);$('healthVitamin').disabled=!!day.endedAt;$('healthMedication').disabled=!!day.endedAt;}
-  function render() {const day=currentDay(),closed=Boolean(day.endedAt);$('questView').classList.toggle('morning-ended',closed);$('endMorning').disabled=closed;$('endMorning').textContent=closed?'MORNING ENDED · '+(regularBP(day)+claimedBP(day))+' BP LOCKED':'END THE MORNING';$('endMorningHint').textContent=closed?'The day is finished. Come back tomorrow for a fresh checklist.':'Finish for today. The checklist and Battle Points will be locked until tomorrow.';renderQuests();renderBonuses();renderHealth();if(activeTab==='journey'&&journey)journey.render();if(adultUnlocked&&$('statsHighlights'))renderStats();renderDevControls();}
-  $('healthReminders').addEventListener('change',(e)=>{const id=e.target.dataset.health;if(id!=='vitamins'&&id!=='medication')return;const day=currentDay();if(day.endedAt)return;if(!day.health)day.health={};day.health[id]={done:e.target.checked,at:new Date().toISOString()};save();});
+  function render() {const day=currentDay(),closed=Boolean(day.endedAt);$('questView').classList.toggle('morning-ended',closed);$('endMorning').disabled=closed;$('endMorning').textContent=closed?'MORNING ENDED · '+(regularBP(day)+claimedBP(day))+' BP LOCKED':'END THE MORNING';$('endMorningHint').textContent=closed?'The day is finished. Come back tomorrow for a fresh checklist.':'Finish for today. The checklist and Battle Points will be locked until tomorrow.';renderQuests();renderBonuses();if(activeTab==='journey'&&journey)journey.render();if(adultUnlocked&&$('statsHighlights'))renderStats();renderDevControls();}
   $('questList').addEventListener('click',(e)=>{
     if(currentDay().endedAt)return;
     const button=e.target.closest('[data-quest]');
-    if (button) {expandedQuest=expandedQuest===button.dataset.quest?null:button.dataset.quest;renderQuests();return;}
+    if (button) {if(expandedQuests.has(button.dataset.quest))expandedQuests.delete(button.dataset.quest);else expandedQuests.add(button.dataset.quest);renderQuests();return;}
     const risk=e.target.closest('[data-risk]');if(!risk)return;
     const qid=risk.dataset.id,action=risk.dataset.risk,day=currentDay();if(!quests.some(q=>q.id===qid))return;
     if(!day.risks)day.risks={};const old=day.risks[qid]||{};
@@ -331,7 +366,7 @@
     const entries=Object.entries(data.days).filter(([k,d])=>d.startedAt||completedSteps(d)||d.bonuses.length).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,30);
     $('historyList').innerHTML=entries.length?entries.map(([k,d])=>{
       const time=d.endedAt?'Morning ended '+new Date(d.endedAt).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',hour12:true}):d.finishedAt?'Quests done '+new Date(d.finishedAt).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',hour12:true}):'Not all quests finished';
-      return '<div class="history-day"><div class="history-date"><strong>'+friendlyDate(k)+'</strong><small>'+completedSteps(d)+' / '+taskCount+' steps · '+esc(time)+'</small></div><div class="history-score">'+regularBP(d)+'/3'+(claimedBP(d)?' +'+claimedBP(d)+' ★':'')+' BP</div></div>';
+      return '<div class="history-day"><div class="history-date"><strong>'+friendlyDate(k)+'</strong><small>'+completedSteps(d)+' / '+(d.checklistVersion===2?taskCount:legacyTaskCount)+' steps · '+esc(time)+'</small></div><div class="history-score">'+regularBP(d)+'/3'+(claimedBP(d)?' +'+claimedBP(d)+' ★':'')+' BP</div></div>';
     }).join(''):'<p class="empty-state">Your adventure log will appear after the first completed task.</p>';
   }
   async function pinHash(salt,pin) {
@@ -351,6 +386,7 @@
       else {renderParentDashboard();if(!dialog.open)dialog.showModal();}
       return;
     }
+    if(action==='piano'&&currentDay().checklistVersion===2){showToast('Piano is included in Daily Quests');return;}
     if(currentDay().endedAt&&(action==='piano'||action==='other')){showToast('The morning has ended. Bonuses are locked.');return;}
     pendingParentAction=action;adultUnlocked=false;
     $('parentDialogTitle').textContent=action==='journey'?'Unlock Battle Journey':action==='piano'?'🎹 Piano bonus':action==='other'?'🌟 Extra bonus':'Adult control room';
@@ -361,6 +397,7 @@
   dialog.addEventListener('close',()=>{adultUnlocked=false;});
   function addBonus(type,reason,amount) {
     const day=currentDay();if(day.endedAt){showToast('Morning has already ended');return false;}
+    if(type==='piano'&&day.checklistVersion===2){showToast('Piano is now in the third daily quest');return false;}
     if(type==='piano'&&day.bonuses.some(b=>b.type==='piano')){showToast('Piano already offered today');return false;}
     day.bonuses.push({id:'b'+Date.now()+'-'+Math.floor(Math.random()*1000000),type,reason,amount,createdAt:new Date().toISOString(),claimedAt:null});
     save();render();dialog.close();showToast('Bonus available for Ethan to claim ★');return true;
@@ -403,11 +440,11 @@
   }
   function renderParentDashboard() {
     if(!adultUnlocked)return;
-    const day=currentDay(),pianoAlready=day.bonuses.some(b=>b.type==='piano');
+    const day=currentDay();
     const pending=day.bonuses.filter(b=>!b.claimedAt);
     $('parentBody').innerHTML='<p class="parent-copy">Choose a reason to make a bonus available. Ethan then taps CLAIM on his checklist to receive the points.</p>'+
-      '<form id="bonusForm" class="form-stack"><label>Bonus type<select id="bonusType"><option value="piano" '+(pianoAlready?'disabled':'')+'>🎹 Piano practice (1 BP)</option><option value="other" '+(pianoAlready?'selected':'')+'>🌟 Other special effort</option></select></label>'+
-      '<label>Reason for awarding it<textarea id="bonusReason" maxlength="180" rows="2" placeholder="What did Ethan do well?" required>'+(pianoAlready?'':'Completed piano practice')+'</textarea></label>'+
+      '<form id="bonusForm" class="form-stack"><label>Bonus type<select id="bonusType"><option value="other">🌟 Other special effort</option></select></label>'+
+      '<label>Reason for awarding it<textarea id="bonusReason" maxlength="180" rows="2" placeholder="What did Ethan do well?" required></textarea></label>'+
       '<label>Points<select id="bonusAmount"><option value="1">+1 BP</option><option value="2">+2 BP (special effort)</option></select></label>'+
       '<div id="bonusError" class="form-error" role="alert"></div><button type="submit" class="primary-wide">MAKE BONUS AVAILABLE</button></form>'+
       '<div class="parent-section"><h3>Waiting to be claimed</h3><div id="pendingAdmin">'+(pending.length?pending.map(b=>'<div class="pending-row"><span>'+esc(b.reason)+' · +'+Number(b.amount)+' BP</span><button type="button" data-cancel="'+esc(b.id)+'">CANCEL</button></div>').join(''):'<p class="mini-muted">No unclaimed bonuses right now.</p>')+'</div></div>'+

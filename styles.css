@@ -209,3 +209,10 @@ body.dev-active .hero-card{border-color:#a77b51}
 .reward-active-toggle{display:flex!important;align-items:center;gap:9px;margin-top:4px;cursor:pointer}
 .reward-active-toggle input{width:20px!important;height:20px!important;min-height:20px!important;margin:0!important;flex:0 0 20px;accent-color:#f7c965}
 .reward-active-toggle:has(input:focus-visible){outline:2px solid #78cddd;outline-offset:4px;border-radius:6px}
+
+/* v2.5 — one checkbox per photographed physical-slider row, preserving its line breaks */
+.quest-body .task-row{min-height:58px;padding:12px 3px;align-items:center}
+.quest-body .task-label{white-space:pre-line;font-size:13px;line-height:1.46;font-weight:700;letter-spacing:.15px;overflow-wrap:anywhere}
+.quest-body .tickbox{flex:0 0 28px}
+.medication-row-note{padding:9px 10px;margin:8px 0 6px;font-size:10px;line-height:1.5;color:#bdcbda;border:1px solid #425871;border-radius:8px;background:#192b40}
+@media(max-width:355px){.quest-body .task-label{font-size:12px;letter-spacing:0}.quest-body .task-row{gap:8px}}

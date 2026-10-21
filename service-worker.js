@@ -1,4 +1,4 @@
-const CACHE = 'battlepoints-v6';
+const CACHE = 'battlepoints-v7';
 const ROOT = new URL('./', self.location.href);
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./journey.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event => {

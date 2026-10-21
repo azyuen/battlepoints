@@ -1,22 +1,38 @@
-# BattlePoints — Morning Quest (v2.4)
+# BattlePoints — Morning Quest (v2.5)
 
 A phone-first, installable, offline-friendly checklist for Ethan, with an original pixel-art explorer and a very short Battle Journey.
 
-## Morning checklist
+## Morning checklist — matching the physical 10-row slider board
 
-There are **three expandable quests, worth 1 BP each**: Morning Routine, Kitchen & Bathroom, and Ready for School. All steps in a quest must be ticked to earn its one regular point. Daily steps reset on the device's local date; timestamps, health reminders, BP, and history are retained.
+Daily Quests now shows **the exact ten physical rows in the photo, with original wording, punctuation and order**. Each row is **one checkbox**, not four separate subtasks. All three groups are expanded by default and can be collapsed independently.
 
-A **sticky timer** replaces the clock, staying visible at the top while scrolling. Tap +/− to choose a duration from 1 to 120 minutes, then Play/Pause or Reset. It has no effect on scoring.
+**Quest 1 — rows 1–4 (1 regular BP)**
+1. MAKE BED / TURN OFF PURIFIER
+2. WASH FACE, SUNSCREEN / UNIFORM, BED CLOTHES
+3. MAKE EGG / MAKE MILK
+4. IS KITCHEN COMPLETE?
 
-The **bonus shortcuts** under the quests are:
-- **Piano +1 BP**: tap APPROVE, enter the adult PIN, and it immediately becomes claimable. Only one piano bonus can be offered per day.
-- **Extra bonus**: tap ADD, enter the adult PIN, write a reason, choose 1 or 2 BP, and offer it. Ethan taps CLAIM to collect an offered bonus.
+**Quest 2 — rows 5–7 (1 regular BP)**
+5. TEETH, NOSE
+6. TOILET, HANDS
+7. IS BATHROOM COMPLETE?
 
-**Risk BP** is a no-PIN, two-step adult discretion measure on each quest. Press RISK BP to show an "at risk" warning, then optionally press **Forfeit this quest's 1 BP**, with a confirmation prompt. Arming and clearing a risk require **no confirmation**. Arming risk alone **never removes points**. Clearing risk restores eligibility. A forfeited quest does not count toward the 3 BP required for an encounter, even if all steps are ticked. This is intentionally a manual decision, never a random or automatic penalty.
+**Quest 3 — rows 8–10 (1 regular BP)**
+8. LUNCHBOX, WATER, ZIP / BAG CHECKLIST
+9. VIT, ANTIHISTAMINES
+10. PIANO
 
-Vitamin/medication reminders remain optional, unscored checkboxes; medicine must not be incentivised by BP.
+Slashes above represent line breaks **within one row** in the app. A quest awards its single regular BP when all its assigned rows are checked. The full 3 BP morning also qualifies for a Journey encounter on End the Morning.
 
-**End the Morning:** a permanent, one-tap cutoff at the very bottom of Daily Quests. The app saves `endedAt`, `finalRegularBP` and `finalBonusBP` for the date, turns the daily screen grey, and disables all checklist interactions (tasks, health reminders, risk changes, new bonus offers and bonus claiming). There is intentionally no cheerful completion animation. The next local calendar day has a fresh checklist. The adult history shows the closed time; previous records are retained.
+**Medication safety:** row 9 is a check with an adult about **whether** vitamins or antihistamines are needed. Checking it never requires taking medicine, and no medicine should be taken just to earn a point. The redundant separate health checkbox panel was removed from the visible screen; historical health records are retained.
+
+**Piano is now a regular task in row 10**, rather than an additional piano bonus. The old piano-specific bonus approval shortcut was removed, but previously approved or claimed bonuses remain in historical saves. A parent can still offer discretionary extra bonuses for other efforts.
+
+**Existing progress:** old, closed days retain their original BP totals and historical task counts. In-progress current days automatically map previously completed substeps to their equivalent combined rows where all parts were completed. No previously recorded earned BP, Journey purchases, receipts, gems or encounters are deleted.
+
+The sticky countdown timer, parent PIN, risk controls, independent Journey/Real-life wallets, adult-editable rewards and separate Dev profile remain unchanged.
+
+**End the Morning:** records the day's totals, greys out the checklist and locks changes until the next date.
 
 ## Battle Journey (adult-PIN unlocked)
 
